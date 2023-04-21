@@ -1,0 +1,216 @@
+CI/CD is the process of continuous  integration and contnous delivery. In the current organization we use git hub as source code repository.
+We have configured a github webook that trigger the jenkins pipeline on every commit. 
+The jenkins pipelines is set up with mulitple stages
+
+Build stage : It take care of code analysis, unit testing and build
+
+Test stage  : Running smoke and functional test
+
+Deploy stage : push artifacts to the registory, prepare deployment manifiest and deploy on the cluster
+
+Deployment statergy : Blue green deployment
+
+
+
+
+
+################################################
+
+Maven - to build java based application
+Sonarqube - > static code analysis , unit test, Build test . We have quality gate, the code should meet the quality gate rules. 
+
+
+#############################################################3
+
+Install java and jenkins
+
+* create a pipeline project and choose where our jenkins file is located  -- pipeline script from SCM -- choose GIT -- and enter the git repo url that your project placed and choose the branch whether main or master. and choose the jenkinspath where it is loacted in the repo.
+
+Note : jenkins file can be loacted in anywhhere inside the repo and it can be any filename
+
+In agent we going to add docker agent because, instead of creating seprate instance for maven and docker , we can create it as contairaization , and also jenkins will start the contanier when the pipeeline start and it will remove the container once the pipeline is compelted. So that our resourses will be freed up and also we will get enough resources for other task.
+
+So in this we going to use mavaen and docker in one container. so that it can be used for the task
+
+  pipeline {
+   agent {
+    docker {
+     image 'abhishekf5/maven-abhishek-docker-agent:v1'  ---  if we need we can use this image for future its public only. in this maven and docker is there
+     args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+
+so to use the above task we have to install the docker pipeline pulgin  -- manage jenkins- plugins - install docker pipeline plugin
+
+Now we going to instal the sonarqube in the same server jenkin.
+install the plugin calle sonar scanner and follow the instruction that given in the readme file to install sonar qube (already fork ed the repo)
+by default the sonar server will start on port 9000
+
+now open the sonar site and admin admin  and to integrate the sonar with jenkins, we need password of sonar.  go to my account and genrate a token. once token created go to jenkins - manage credentials - create a secreet text for sonarqube.
+
+now install docker on the instance, follow the procedure that given in readme , after install docker add the jenkins, ubuntu users to docker group 
+
+Note : maven clean installl vs mvn clean package
+
+clean install : will store the war, jar file to artifactory. If we need to store the artifacts to the artifactory we can use install.
+clean package : it is just used to push the package to the docker image for building docker images.
+
+Pom.xml - this is used for javva application for building the packages, all the dependencies for the code will be in pom.xml file. so while bulding the code mvn will download those dependenciess using pom.xml (from internet) . 
+
+once the war or jar file build. it will save inside the target folder.
+
+Note : to use token in the manage credentials use secret text.  for username and password use "username & paasword "option
+
+Once code is build , using sonarque for static code analaysis for checking any bugs and vulnerablities 
+
+note : svae the cred for sonarque,docker,git  in credential manager 
+
+to get git cred ---> stetting -> developed seetting -> personal access token -> and generate a new tokan and use that in credential manager
+to get sonar cred -->  myaccount -> generate token
+
+
+stages {
+    stage('Checkout') {
+      steps {
+        sh 'echo passed'
+        //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
+      }
+    }
+    stage('Build and Test') {
+      steps {
+        sh 'ls -ltr'
+        // build the project and create a JAR file
+        sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
+      }
+    }
+    stage('Static Code Analysis') {
+      environment {
+        SONAR_URL = "http://34.201.116.83:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        }
+      }
+    }
+
+
+Once test completed using docker file creating docker image and push them into docker hub
+
+
+    stage('Build and Push Docker Image') {
+      environment {
+        DOCKER_IMAGE = "Srini/ultimate-cicd:${BUILD_NUMBER}"
+        // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
+        REGISTRY_CREDENTIALS = credentials('docker-cred')
+      }
+      steps {
+        script {
+            sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+            def dockerImage = docker.image("${DOCKER_IMAGE}")
+            docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+                dockerImage.push()
+            }
+        }
+      }
+    }
+
+Once the code push to docker hub, we need to update the github repository where you placed your yaml file. like updating your image name. below script will update the yaml file 
+
+    stage('Update Deployment File') {
+        environment {
+            GIT_REPO_NAME = "Jenkins"
+            GIT_USER_NAME = "iam-Srini"
+        }
+        steps {
+            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                sh '''
+                    git config user.email "srini@gmail.com"
+                    git config user.name "Srini"
+                    BUILD_NUMBER=${BUILD_NUMBER}
+                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                '''
+            }
+        }
+    }
+  }
+}
+
+
+go to kubernetes create a argocd and getinto the gui of argocd . password will be the server name or the password will be saved in secrets
+go into cli and configure the github path into it . so that it will pick the changes.
+
+FUlll pipeline script below:
+
+pipeline {
+  agent {
+    docker {
+      image 'abhishekf5/maven-abhishek-docker-agent:v1'
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+    }
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        sh 'echo passed'
+        //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
+      }
+    }
+    stage('Build and Test') {
+      steps {
+        sh 'ls -ltr'
+        // build the project and create a JAR file
+        sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
+      }
+    }
+    stage('Static Code Analysis') {
+      environment {
+        SONAR_URL = "http://34.201.116.83:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        }
+      }
+    }
+    stage('Build and Push Docker Image') {
+      environment {
+        DOCKER_IMAGE = "abhishekf5/ultimate-cicd:${BUILD_NUMBER}"
+        // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
+        REGISTRY_CREDENTIALS = credentials('docker-cred')
+      }
+      steps {
+        script {
+            sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+            def dockerImage = docker.image("${DOCKER_IMAGE}")
+            docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+                dockerImage.push()
+            }
+        }
+      }
+    }
+    stage('Update Deployment File') {
+        environment {
+            GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
+            GIT_USER_NAME = "iam-veeramalla"
+        }
+        steps {
+            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+                sh '''
+                    git config user.email "abhishek.xyz@gmail.com"
+                    git config user.name "Abhishek Veeramalla"
+                    BUILD_NUMBER=${BUILD_NUMBER}
+                    sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                '''
+            }
+        }
+    }
+  }
+}
+######################################################################################################################################
+ 
+

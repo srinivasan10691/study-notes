@@ -1,0 +1,43 @@
+myself srinivasan, I completed my graduation in information technology in the year of 2012
+I have totally 8+ years of experience in my carrer
+For the past 3+ years working in Css corp as a specialist . Used to work on both linux and aws and in devops tools
+About my roles and responsiblities:
+
+Used to take care of all the application servers that are deployed in various DC
+Reponsible to install/configure  customer requested packages on newly deployed server or existing server
+The application that I supported is for BLACKBOARD . which is digital learing app  and all the clients are located globally
+
+If there is any new release on application. we used to upgrade the application and  troubleshoot all kind of service related issues
+Since all our clients are moving to cloud environment we are in process of moving all the DC vms to cloud aws
+Using s3 trasfer accleration we used to transfer the datas to s3 bucket securly in the migration process.
+
+implementation of Build and Deployment Automation for Java based Web Applications
+Handle multiple builds from Development team, create build jobs in Jenkins
+Responsible for executing scheduled and unscheduled application builds and automating the processes.
+Creating resources in AWS cloud using Terraform and make them as modules.
+
+
+https://moodys.zoom.us/j/93768622472?pwd=cVdGaDdwM09VbmJsRlkwZmlScFZQQT09
+
+##########################################################################################
+
+Day to day activities
+
+My day to day activities is like, when logged in to the shift the first one hour will be getting hand off from the previous shift. These handoff  done by shiftleads in respective shifts. Like How many ops tasks are pending and what are the clients that are currently in migration and what is the status of each migration. And also how many live migration is on process.
+
+Once handoff process completed, I will assign each task to my team accordingly and ensure all the task has been hand over to the concern persons.
+If any doubts or any assistance required to the team I will assist on the issues and also provide KT on the new process  if anything updated.
+
+Most of our client are migrating to cloud, So will keep monitoring  all the status of the migration that my team working and if any lag or issues will get into it and troubleshoot the issues accordingly.
+
+For the Test migrations we used to provision the instance and required resources in aws using terraform modules and change the values accordingly to the requirements. and will keep track of those migrations and once it completed we will destory the resources.
+
+And also work in the task like creating ci/cd pipelines for the devolopment team for testing the newly released learn versions. And once all the testing completed and QA completed. the new verision will be depolyed into the production environment manually if client willing to upgrade the version to new release.
+
+########################################################################################################################################################################################
+
+
+
+
+
+ 

@@ -1,0 +1,137 @@
+sonarqube --> code quality check, it wil check the code quality standards  ( java code that wrtten by devolper)
+
+jenkins /travisi/bamboo
+maven /ant / gradle
+nexus/jfrog
+
+
+simple monthly calculator
+
+Create ec2 instance with t2 medium and open all tcp port
+install git and jenkins
+
+To install jenkins:
+
+amazon-linux-extras install epel -y
+
+yum update -y
+
+wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+rpm --import http://pkg.jenkins.io/redhat-stable/jenkins.io.key
+
+sudo amazon-linux-extras install java-openjdk11
+
+yum install jenkins –y
+
+systemctl start jenkins
+
+
+JAVA-   sudo amazon-linux-extras install java-openjdk11
+
+
+INstall maven
+
+http://mirrors.estointernet.in/apache/maven/maven-3/3.8.5/binaries/
+tar -xvf apache-maven-3.8.5-bin.tar.gz
+
+
+Below are the main files that we have to check on the code.
+
+pom.xml   project object model   maven kana file  -- oru java code ah bild pana sola adhu ena package name la venum (myweb) and version(0.0.5) and which form we want .war 
+  myweb-0.0.5.war
+All these details will be in pom file and also it will have all the dependencies belongs to code (devolper kuduthadhu)
+
+docker file  -> to build image 
+
+
+NOTE :Maven will build the jave code and save the .war file in TARGET/myweb-0.0.5.war . It will create a target folder automatically 
+
+inside docker file :
+
+FROM tomcat:8
+COPY target/newapp.war /usr/local/tomcat/webapps/
+
+inside jenkins file :  already file is there is study vides get it from there 
+
+ jenkins file is written in groovy 
+
+
+mvn package --> command use to build code using maven 
+
+
+node{
+  stage(git code) {
+  git "https://....."
+  }
+  stage (compile package) {
+  def mvnHome = tool name: 'maven3' ,  type:maven
+  sh ${mvnHome}/bin/maven clean package
+  mv target/web*.war newapp.war
+ }
+  
+We have to install maven in jenkins using plugins.  go to manage plugins and install maven integration .
+Now we need to specify where maven is locate. IN global tool configuration --> search maven installation -> enter the allias name and where maven is located(homepath)
+
+now maven will build the war file and put that in the name of newapp.war
+
+Now we have to build the docker file, already docker file is in the path ,just we have to execute the command to build and push it to hub and using that image create container
+
+  stage(docker image build){
+  sh docker build -t srinivasan10691/myapplication:0.1
+  }
+
+  stage (docker push image) {
+  with Credentials([ string (credentials id: 'dockerpass' , variable : 'dockerpassword')]) {     - we need to configure the password in jenkins
+  sh "docker logn -u srinivasan -p ${docker password}"
+  }
+  docker push srinivasan10691/myapplication:0.1
+}
+  stage (docker deployment) {
+  sh docker run -d --name webapp -p 8081:8080 srinivasan10691/myapplication:0.1	
+}
+
+
+Sonarqube : is to validate the java code (code nambalakuku etha mari eruka , security ya eruka, namba standard la eruka nu check panum) 
+
+will check code quality and code security 
+
+Create a db for sonarque in aws, choose mysql 5.7 and create usename and password.
+create a instance with t2 medium , and login to db using dbendpoint "msql -h dbendpoint -p 3306 -u *** -P
+once logged in , create a table and give permssion to the user ( follow the doccument)
+now need to install sonque in the instance, download sonarqube 6.7.6 and extract
+THe two important file for sonarqube is wrapper.conf and sonar.properties
+
+sudo update-alternativies --config java--> it will show where the java installatiion path currently points too
+update the java path in wrapper.conf and update some changes in sonar.properties like  db username and password  check the notes
+sonarqube default port is 9000
+now start the sonaqube , but not in the root user, normal user.   change the sonarque foler permssion to normal user.
+get into the sonarque in the web, it will give one token id copy that, so that we can use that token to integrate with jenkins
+
+to pass the token in jenkins, mangage jenkins -> manage credentials -> jenkins -> global credentils -> add credentials -> secret text -> paste the token in secret and fill the other fields .  same as docker cred saved.
+
+Install the sonarque plugins -> go to the configuration -> search for sonar and enter the tokenkey variable and sonarquebe webpath for integration
+
+stage (sonarque analysis) {
+def mvnHome = tool name: 'maven3' ,  type:maven
+ withsonarqueenv('sonar')
+  sh ${mvnHome}/bin/maven sonar:sonar  --> it wil push the code to sonar and test
+
+
+Now we going to push the image file in nexus instead of docker hub
+
+artifactory : its a private repository . 
+nexus and jfrog are private artifactory it means private repository  
+
+create a ec2 instance t2 medium, downoad the nexus file and extract in opt and install java and start the nexus
+nexus port :8081
+same asjenkis coniff while staring in web
+Neeed to install the docker in nexus and go to ec2 server where docker images is runing and do some config like create demon.jason in the ec2 instacne ..check the notes
+
+
+
+ How to do automate trigger 
+login to githubb, settings , webhooks add webhooks  and enter the url in payload url
+Jenkins ip:8080/github-wehook/ enter this url in the payload url and update webhook
+go to jenkins -> conifigure -> in genral -> git hub project -> enter the project url where the code is there(github url) -> build trigger -> choose github hook trigger and save
+If any changes made in github, for ex do some changes in jenkins file and and commit. it will automatically trigger the pipeline.

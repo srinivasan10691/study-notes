@@ -1,0 +1,498 @@
+-we have manually created ec2 instances in aws, now we try to create the same using terraform(you are running terraform in a new machine ). what will happen ?
+
+IT will create another one, because in state file has not have information regarding that ec2 instance)
+
+################################################################################
+-we have ansible playbook where it installs and starts the service, how the ansible knows if the service is installed correctly and if it failed where and how to find logs for that in ansible.
+
+
+We have to mention the log path in the anisble.conf file first
+Also we can use -v command to to turn on the debug mode
+
+#####################################################################################
+
+-how to automate jenkins master slave connection, you can use any automation. -----------------------------------------------------------------
+
+######################################################################################
+
+-A file in a folder(many folders, many files) contians a string `firstname`- user bash script to search and rename the string.----------------------------
+
+
+###################################################################################################################
+-a scirptfile has a function how to use that function in an another script file  -------------------------------------------------------------------------------------
+
+
+##################################################################################################
+-docker file - explain
+A Dockerfile is a text document that contains all the commands a user could call on the command line to assemble an image.
+FROM,CMD, ENTRYPOINT, COPY, ADD, EXPOSE,ARG,ENV
+
+###################################################################################################
+-how to copy files from local to docker container
+
+docker cp foo.txt container_id:/foo.txt
+
+################################################################################
+-can we create ec2 without ami, how to upload emi
+
+We can create a custom ami using packer or taking images backup from instance and then we can use it. 
+
+Packer : used to create a custom image using json template. In template we have many modules to create an image. below are listed
+
+variables : we  can use this to  mention our aws scret key and access key to access the aws resources
+Builders :  we have to mention whether the image that we creating is used for aws or azure, or vm. IN this case we using aws so we have to mention as aws-ebs and we have to mention the details required for creating the image. Sourceimage will be taken from amazon ami
+provisioner : once the server is ready in any platform  inside the server what are the third party custom software you need to install that we have to mention in this provisioner field. like yum install httpd, etc 
+post-processors - after the image is build,they can be used to uplad in artifacts
+############################################################################################################################
+-how to scale ebs volumes without powering off ec2?
+
+We can scale ebs volume without downtime, have to follow the below steps
+
+taking snapshot of ebs volume that you going to extend -- for safety purpose
+choose the ebs that you going to extend  Action -> modify volume and enter the size that you need to increase.
+Once increased we have to extend the partition, eextend the filesystem
+
+lsblk   it will list the partition size and the file system
+extend the partition  -> sudo growpart /dev/xvda 1    1is first partition
+exetend the filesyste  -> sudo xfs_growfs /   -- this is for xfs file system
+                          or   sudo resize2fs /dev/xvdf1  -- this is for ext4 file system  
+
+##################################################################################################################
+-can we mount s3 with ec2
+
+Create an instance --> userdata --> apt-get install awscli ; apt-get install s3fs -y
+create an iam user with s3 access
+configure the access key and secret key to the instannce
+create a folder in ec2 instance and create 3 files inside it, (we need to sync these to s3 bucket)
+create a bucket in s3
+aws s3 sync /home/ubuntu/bucket s3://mynewbucket   - now datas are synced
+this only sync the data from sooource bucket not mounting it. to mount the volume use the below command
+
+mynewbucket /home/ubuntu/bucket fuse.s3fs _netdev.allow_other 0 0  put it in fstab    ---fuse.s3fs is utility
+
+#########################################################################################################
+-is the connection between ec2 and s3 is private or public -- its public, if we have to make them private also we can do by below methods.
+
+Create a Bastion Host (Publicly accessible EC2 Instance)
+Create an ec2 instance in private subnet
+SSH into private ec2 instance through Bastion host
+Create a VPC endpoint for S3, attach it to the Private subnet's Route table.
+List all the S3 Bucket and its objects
+
+Create vpc endpoint :
+Go to vpc dashboard and Enpoints and "create a end point" - chosse aws service and then choose "amazon s3 gateway" and then choose the VPC ( we created ) and the choose the route table(main default) that need to associate . Now VPC enpoint created if we want to check go to the route table and check there will be a route which is created by VPC endpoint. 
+##########################################################################################
+-how to delete all the new versions and bring the old verison of an object to the current version in s3
+
+To delete the specific version we have to delete it by seperate by choosing that version alone
+
+
+
+###################################################################################################
+-can alb is independent or attached in a vpc
+
+The load balancer routes traffic to targets in the selected subnets
+
+ They are not bound directly to subnets, but rather to TargetGroups which are themselves then bound (indirectly) to subnets.
+
+So a single ALB could theoretically route to both private and public subnets within a VPC.
+#######################################################################################
+-can we create ec2 instance without subnets
+
+no its not possible buut
+If you have account(s) opened before the end of 2013, you have access to both EC2-Classic and EC2-VPC. Within Classic, you can launch instances “naked”, with direct connection to the internet, without a VPC.
+
+
+##################################################################################
+-3 three ec2 instances running docker on different ports, how do you load balance using alb - traffic has to land on differnet containers ports ------------------------------
+
+specify 0 in host port ( we creating taskdefinition(pod) inside tthat we creating the container , in that container we need to specify the port (host port and container port) in the host port give 0 and container port give 80 (so that we can initiate the dynamic port forwarding ) . bridgee networking mode. 
+
+Service -- here service is nothing but deploymeent(kube)  . we have to attach the taskdefnition(pod) and attach loadbalancer for this(alb) and inside the loadbalance we alread created the target group(which we wil do usually) to to attach these pods to that target we have to metnion the target group and the listner . so once the service(deploy) is created all these pods will be added to targetgroup and the target group is already attached to ALB .
+In this service(deply) we can also inititate autoscaling for the pods.
+
+SInce we attached the target group in the service, all the pods are registered to that target group automatically and it will pick up the client port dynamically (like 3345,23345,3565) like this. so now we have to open these port in security group,since its dynamic we can mention each port seperatly one by one. instead of that we can add the alb security group into our ec2 security group . like allow all tcp connection(0-65535) in source colum enter the alb security group . so that the port will not be exposed to all expcept to alb. 
+
+
+################################################################################
+-is s3 global or regional ?
+
+global
+
+##########################################################################
+-how do you create a nat gateway in private subnet in VPC and give inetrnet access to the nodes in private subnet
+
+create a nat gateway  in the public subnet and edit the route table like oooo to nat gateway  and attach that root table to your private subnet ( associate your private subnet to that route table)
+
+#############################################################################################
+-do you use aws cli commnads
+
+aws s3 ls s3://mybucket
+aws s3 cp myfolder s3://mybucket/myfolder --recursive
+aws s3 sync myfolder s3://mybucket/myfolder --exclude *.tmp
+
+#####################################################################################################
+-how to download an object and it's files in a package
+
+aws s3api get-object --bucket DOC-EXAMPLE-BUCKET1 --key dir/my_images.tar.bz2 my_downloaded_image.tar.bz2
+
+aws s3 cp s3://*****  target 
+################################################################################################
+-how to obtain source image from ECR in a docker file
+
+
+aws ecr describe-repositories
+aws ecr describe-images --repository-name amazonlinux   
+docker pull aws_account_id.dkr.ecr.us-west-2.amazonaws.com/amazonlinux:latest    --authenticate your Docker client with Amazon ECR
+
+
+aws ecr get-login  - login to ecr 
+FROM 1234567890.dkr.ecr.us-west-2.amazonaws.com/mycompany:latest   right way to pull the images from ECR to docker file
+
+
+###############################################################################################
+-how to download a package from public/private s3 buckets and install in an ec2 instance
+
+aws s3api get-object --bucket DOC-EXAMPLE-BUCKET1 --key dir/my_images.tar.bz2 my_downloaded_image.tar.bz2
+
+
+###########################################################################################################
+-how to attach asg with alb
+
+Create a ALB --> while creating the alb attach the security group. In the creation process it will create a target group attached with the alb and choose the VPC and the region.
+NO need to attach the instance to the target group since we going to attach the ASG into the target group it will automatically take the instance from it
+now create a asg --> create launch configuration --> configure asg --> start with 2 isntances ->choose the vpc and subnet --> and choose the option "receive a traffice from loadbalacner " and choose the target group that we created above --> and then scaling policies (scale between min and max) --> notificatin  choose the topic and send the notificaiton for termination instance launch instance and for others
+
+now go and check the target group instances willbe added and we can use the ELB enpoint to work with webserver.
+
+
+desired - nnormaly we must have 2
+min  - atleast one
+max  - scale upto 4
+
+############################################################################################################################################
+
+1. How to restrict specific ip's from accessing s3 buckets
+
+choose the bucket - edit bucket policy  -> policy genrator -> enter what are the things and wat are the ways that s3 bucket can acess(like create job , delete job  in the actions) for us choose all things (to deny) and give the s3 bucket arn --> go to add contions and mention the source IP that we need to block to access the s3 bucket and click genrate policy . now policy will be genrated and add thAT policy to the bucket policy.
+
+####################################################################################################################
+2. How do you give access for a user in account B to use s3 buckets in account A
+
+Create a user account B --> for that user attach a policy like(allow get and put objects in the account A) mention the arn of the acount A bucket in that policy
+go to account a , choose the bucket that yu need togive access to A and go to bucket policy and enter the policy stating (allow get and put objects into the bucket) and in the principal option mention your account B user arn . so now the account b user can accces the acount a s3 bucket .
+
+effect - allow or dny
+resources - bucket arn
+action - get put delet etc
+principle - user arn
+
+
+######################################################################################################################
+3. Ec2 instance in public subnet VPC on account A, need to access ec2 instance in private subnet VPC on account B. how do you achieve that ?
+
+
+https://tomgregory.com/cross-account-vpc-access-in-aws/
+
+
+1st way : we can peer the two different account vpc , so that they can access the ec2 instance 
+
+Peering steps :
+NOTE : A VPC with CIDR 10.0.0.0/16 cannot be peered with another VPC with CIDR 10.0.0.0/16
+A VPC with CIDR 10.0.0.0/16 can be peered with a VPC with CIDR 172.31.0.0/16
+
+In the VPC dashboard of account A select Peering Connections then Create Peering Connection.
+VPC requester - enter your vpc id (A) ;  in the account ssession enter the another account ID and region and VPC ID of that account to pair. 
+Go to the account B and accept the request that came from account A.
+Now we have to connect the both VPC via route tables.  
+GO to account A  --> edit the route table (where your instancce is located ) -> In the destination file enter the B account CIDR and target will be VPC PERRING connection ( so any request that going to ACCOUNT B will be connected through the VPC peering connection). same route entry should be done on the account B also
+Now the connectione established we can connect our ec2 instances.
+
+
+2nd way : VPC endpoint service (PrivateLink) cross-account access:
+
+The VPC endpoint is exposed as a private IP address within your VPC, accessible using a private DNS name. VPC endpoints are most commonly used to make AWS API requests from a VPC, without going onto the public internet.
+
+the VPC endpoint is one-directional, meaning you can only send a request from account B to account A
+
+Step 1: create a network load balancer
+under VPC choose the VPC where the instance you want to expose is deployed  
+and create a target group and attach the instance that you need to expose to other VPC (where the service is initiated)
+once NLB is created , create endpoint service --> choose the NLB that you created and create a enpoint service.
+Now we need to create endpoint ( enpoint is used to access the enpoint service)
+go to other VPC account and create a endpoint and it will create a eni interface .  so now we can able to access the service enpoint using the endpoint( where ec2 is associated)
+
+The above is not fully validated, hence ignore it
+
+USING TRANSIST GATEWAY we can connect the two different VPC:
+
+For eg : Account A and account B should be connected. IN this we going to create a transitgateway in account A , and then using RAM resource assess manager we going to expose the transit gateway to another account and give request. Now got to account be in the resource acess manager accept the request. Now transit gateway is connected between two accounts. now attach the VPC to the transist gateway to communicate with each other. 
+
+To attach the vpc to transit gateway , in account B  go to transit gateway attachment and create a attachment in that add the VPC to that attachment . now in transit gateway attachment we added account B vpc , same as we should add the account A .   NOte: we have to accept the request that given by account b while adding the VPC to the attachment . Now 2 vpc has been connected with one transit gateway
+
+Finaly we have to route the traffic via route table,  go to account A security group where your instance is placced and enter the details 10.0.0.0/16(B account) access via transit gateway id .... same as accountB  . Thats it
+
+
+######################################################################################################################################
+4. What is http/https how secure is the traffic.
+
+If a website uses HTTP instead of HTTPS, all requests and responses can be read by anyone who is monitoring the session
+Https is used via encrypted connected. which will be more safe than http. and no once can read the encrypted datas
+
+
+#######################################################################################################################
+5. Path based &host based routing in ALB.
+
+Pathbased :  nothing but /shopping /billing these things can be fowarded to differed target group. we can customize these things in the application load balancer . normally while loadbalance creating we will add one target group. but we can add mulitple target after creating the LB . ONce LB Is created choose the LB and edit the listner and add rule and then add the conditions ( path based /host based /source IP) and forwarded to the Target group . in this we choose the pathbased like /shopping* and forwared to target group . in that target group the shopping based module applications will be associated.  This is path based routing in ALB
+
+
+same as in host based --> create a domain > srini.com and register in root53 
+red.srini.com and yello.srini.com  we have two url , first one will point to red page and seond one will point to yellow( create a instance accordingly and register in target group) 
+create two target one for red and another for yellow.
+Create ALB while creating alb we can only attach one target group. to add another one , we have to go to listner and edit and edit the rule.
+add rule same as above but we going to use host header and mention the red.srini.com and forwareded to red target and do the same for yellow
+IN the route53 create these two domain url and point to the same ALB.  
+
+Now if customer requeest will reach to DNS and it will forward to ALB, ALB check the rule and forward to the correct target group
+
+
+######################################################################################################################
+7. Ingress, ingress controller
+
+
+
+################################################################################################################
+9. Workspace in Terraform
+
+
+################################################################################################################
+10. Ansible, how do you rate yourself on a scale of 10
+11. Can we have certificates in ALB.
+
+Yes while configuring the ALB we have option to upload our certificate
+#######################################################################################################################
+
+
+what is VPC?
+
+A virtual private cloud (VPC) is a secure, isolated private cloud hosted within a public cloud
+
+
+################################################################################################################
+How to change public subnet into private subnet?
+
+Just remove remove the subnet from route table which is attached with IGW , or remove the igw entry from route table
+
+####################################################################################################
+what is VPC endpoint?
+
+A VPC endpoint allows you to privately connect your VPC to supported AWS services. It doesn't require you to deploy an internet gateway, network address translation (NAT) device, Virtual Private Network (VPN) connection, or AWS Direct Connect connection
+###########################################################################################################
+what is private link in s3?
+
+private link is nota a service its a method to connect the service without public facing. we can access our aws s3 bucking via private link by , provisioning the vpc endpoint in our vpc, while creating the endpoint it wil ask for which servicces you need to access, choose s3 and type is interface and then choose your VPC and the subnet where your instance is lanched. now we get an endpoint . through this endpoint we going to access our s3 buckets
+
+aws s3 ls s3://bucketname --enpoint-url https://bucket.enteryourendpointurlhere  --region ap-south-1
+
+
+
+VPC endpoint --------- privatelink  ----------vpc enpoint service
+
+via enpoint we going to access the enpoint service (whatever the serive we need to expose like s3 )   this connectivity will be in private not in public
+VPC endpoint is consumer and vpc endpoint service is producer ... 
+VPC endpoint will create Elastic network interface (ENI) in the subnet (privatesubnet) (which is mentioned while creating endpoint) and it will be associated with one private IP. SO this ENI will be our connection part which is used to communicate with other end.  so ec2 instance inside tht private subnet able to connect with the other end via ENI
+
+Now we going to create endpoint service , in oder to create an endpoint service we need to have NLB network load balancer . 
+
+###############################################################################################################
+KMS, EKS, Clouddfront, Route53, 
+
+Kms : it is used for data encrytion . Kms servvice is a region specific service 
+symmetric encryption : one key is used for both encryption and decryption process
+asymmetric encryption: It uses a pair of keys - one public key and one private key to encrypt and decrypt the data  -- this statergy we used for ssh the ec2 
+
+3 types
+aws owned managhed key            -------------- this is created by aws, where we cant see any metadata for these key or we cant manage they keys
+aws managed key                   -------------- in this we can able to see the metadata of the key and we can see the key policy  but we cant able to edit the key policy
+customer managed key              ---------------- IN this we can create our own key using KMS or external and that key can able to edit the key policy . we can use symmetric and assymmetric option for this to create a key
+
+
+create own customer managed key and managed by aws   --in this we going to gnerate our own key using kms or we can also import our own key to this. 
+create your own external key material and import them to kms.
+
+EKS :  we can create a EKS cluster using the tool name called EKSCTl . Using a simple yml file we can able to create a EKS cluster in aws account. 
+EKS Is used to manage ECS service 
+
+
+Cloudfront :
+
+
+Route53: 
+
+
+##############################################################################################################################
+EBS in one AZ and EC2 in another AZ, how do you attach them into Load balacner, Is it possible?  ____________________________________________________________________________
+
+##############################################################################################################################
+what is the Terraform version you are using?
+
+terraform_1.4.2
+
+############################################################################################
+-> How to copy S3 buckets objects across AWS accounts
+
+go to management settings there will be an option called create replication rule, in that we can able to create a rule stating that al the objects in this bucket can be replicated to other region buckets of other account buckets . 
+
+for cross account access like copying
+
+source account : where the datas are present -   create a bucket policy stating this account id (other account )can access this bucket (likke list object and get object ) and then go to destination account create an User with a policy ( access the ressource from other account bucket "arn of the bucket name" and copy and put it in this bucket (destination bucket ) and attach this role to the user.. now do copy sync  from source to destination account. 
+
+
+##########################################################################################################
+-> How to block specific IAM user to use S3 buckets
+ we can creaste a delegate policy stating deny access to that specifc bucket and attach that policy to the user account  and other way is creaste a bucket policy using genrate policy we can provide the user arn to restrictt the access .
+
+####################################################################################################################################################
+
+-> What is state locking in Terraform
+
+
+state locking is used for restricting mulitple person to apply the terrform .
+only after applying the state file will be created
+so if we want to create the state file in s3, then we have to use the resource name called backend . with this we can mention where the state file can be created in the s3 .
+so once we give the apply then the state will be created in the s3 bucket
+
+backend "s3" {
+   bucket = "remote-state-tc"
+   key = "bucket-folder/terraform.tfstate"       inside the bucket remote-state-tc there will be a folder bucket-foler and inside that this state will be created
+   region ="us-east-1"   dynamodb_table = "remote-state-tc"    --- ths is for locking the state file if multiple user accessing the apply option
+
+
+create dynamodb :
+   dbname : remote-state-tc
+   primary key  should be LockID
+
+
+terraform state pull --> will pull the state file
+terraform state list --> will show what are all the resource we created wil be listed
+terraform state rm resourceid  -> it will remove the resource in the state file , so oncce we give aply again it will recreate the resources.
+
+############################################################################################################################
+-why we can't use same port no for all containers running on a same machine.
+
+
+
+########################################################################################################################
+-how to open the docker container
+
+###############################################################################################################
+-how to connect RDS in private subnet from outside vpc  _________________------------------------------------------------------------------------------------------------------
+
+using vpc endpoint we can able to access from outside of the vpc. peering the other vpc to this vpc  and using bastion host connect the prrivate ec2 instance which is connected with the RDS using VPCendpoint
+
+
+##############################################################################################################
+connect your privvate subnete ec2 instance to s3 
+
+We have two option one is gateway endpoint and other one is interface endpoint
+
+VPCENDPOINT
+gateway endpoint supports only s3 and dynamodb
+interface endpoint will support some of the aws services 
+
+If we use to access the s3 via interface endpoint  then it will achieve through the ENI elastic network interface . whenever we use interface endpoint it will communitcate only through ENI ( which will be created while creasting VPC endpoint interface). in the interface endpoint once we created we get an endpoint link , using that enpoint link we can access the s3 directly from that server.  in this case we using endpointlinnk to access the s3  "aws s3 ls s3://bucketname --enpoint-url https://bucket.enteryourendpointurlhere  --region ap-south-1
+", but in gateway we direclty use aws s3 ls
+
+
+
+
+Gateway endpoint - create a VPCENDPoint and choose to access the s3 via gateway endpoint and attach the VPC and attach the route table where our private subnet is associated. once the endpoint created, we can check the private subnet rule we can see the s3 endpoint will be added over there. so that whatever instances attached with that private subnet can be access the s3 via that route table . 
+
+
+
+
+
+
+################################################################################################################
+
+
+-ASG and ALB full architecture
+
+
+
+############################################################################################
+-S3 lifecycle rules
+
+Move current version of object between storage classes
+move previous version of objects between storage classes
+expire current version of objects   -- rm
+permanenty delete previous version of objects 
+delete expired delete markers
+
+########################################################################################
+-Route53 record types
+
+NS and SOA is a default record we get once we hosted as domain 
+
+A   --> domain name to IP
+AAAA --> domain name to IPV6
+CNAME --> domain name to another domain
+NS   ->  name server
+SOA  -> start of authority  ---- administrator records of zones
+PTR --> IP to domain name
+MX ---> Specifices MAIL exchange server
+
+routing policy:
+SIMPLE
+WEIGHTED:  route the traffic based on the ec2 capacity
+GEOLOCATION:
+LATENCY:
+FAILOVER:
+MULTIVALUE ANSWER:		
+
+
+######################################################################################
+
+-VPC flow logs
+
+VPC flow logs which is used to monitor all of your network traffic that goes through your VPC. We ccan also seperatly monitor the subnets and Network interface 
+ All the logs can be stored in two ways 1. cloudwatch log group   2 S3 bucket
+
+Cloudwatch log group : create a log group in the cloud watch to store all the VPC flow logs into that.  Into the log group there will be log stream into that we can have a events( logs)
+Create a IAM role for  VPC flow logs need to access the cloudwatch to store the logs
+
+##############################################################################################
+Update launchconfiguraton :
+
+take new version of ami snapshot.   go to launch configuration take a copy of that existing launch configuration and edit (copied one) the launch cconfiguraiton in that choose the updated AMI and change whatever you needed and save it. so now we have new lauch configuration . Go to autoscaling group inthat change the exisiting launch configuration with the new one. ONce done save that.  So now we have to do the instance restart in rollingg manner , so that there will be no downtime for this. so if instance is restarted then it will pick up the new launch coniguration . 
+
+
+
+########################################################################################################################
+-VPC architecture
+
+###################################################################################################
+-how to connect two vpc in different account  -- done
+#############################################################################################################################
+-how to add asg to load balancer in different vpc--------------------------------------------------------------------------------------------
+-do have create any cicd job
+-how to import package from different module in shell scripting ------------------------------------------------------------------------------------
+-how to copy file from one script file to other script file ----------------------------------------------------------------------------------------------------
+-what is the username to login to linux machine
+-is it possible to create user inside linux machine
+-use of terraform modules
+-how do you write your Terraform code from scratch with best practices  ------------------------------------------------------------------------------------------
+-what is Cloudfront and is it possible to get synchronous data
+
+
+
+
+-what is namespace in Kubernetes ---------------
+-what is services in Kubernetes---------------------------
+-explain abount architecture of Kubernetes in brief
+-what is types of services in Kubernetes
+-what is RBAC in Kubernetes------------------------------------------------------------------------------------------------------->>>>>.
+-what is pods in Kubernetes
+-what is PVC and PV in Kubernetes 
+-what is lables & selectors in Kubernetes _________________________________________________________________________________________->>>>>
+-what is node selctor, taint and tolerance in Kubernetes

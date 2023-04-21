@@ -1,0 +1,381 @@
+DOCKER :
+
+docker space doube tab will show you the docker commands that can be used . for eg in that there will be volume option
+docker volume ls -> it will list out . "docker volume help" will show what are the commands we can use
+
+docker info --> will show the containers list, running list, stopped list  and also swarm(clustring) whether it is enabld or nt
+docker system df -> will show the disk space that utilized in docker
+Docker system events -> will show the error or problem that currently in dockker
+docker system Prune -> remove all unused data like stopped containers, networks that are not used and dangling images(not used images) 
+Docker stats -> it show the realtime usage of each container and images
+docker images -> show the list of images in our repo
+docker search busapp or httpd these are public images we can download and save it 
+docker pull userid/imagename -> which will download it to our repo
+docker pull httpd --> in this we have not getting this image from any user this image is from officially so it dont have user id
+Now "docker images" will show the downloaded image
+
+
+docker ps - will show running container list
+docker ps -a --> this will show running and stopped container
+docker create -> this will just create the container but will not run thee container
+docker run -> this will create and run the container
+docker run --name webserver httpd  --> httpd is image name  and webserver is server name that we giving . and main thing is if we execute this command then in that screen we cant do anything this command wil take that screen and if we give control c then it will shutdown the container that running . so if we have to run the image in background means we have to add -d  detached mode
+docker run -d --name webserver1 httpd -> now it will run the container in background
+
+foreground na screen layae run agum , background na screenback la run agum
+
+To get into the running container that we created - > docker exec -it webserver1 /bin/sh or /bin/bash  (it - interactive terminal)
+it - is for entering into the container shell
+If we have to get some output or create some directory into that container means we can create it without entering into the container
+
+docker exec webserver1 mkdir /tmp/srini --this willl create a directory without entering into the container shell (it is not used)
+docker cp file webserver1:/tmp/  --> this will copy file frm docker host to container . in this we can use container id instead of webserver1
+
+Check the system related commands that given starting the class - stats, events, df , etc
+
+docker stop webserver1 ->will stop the container . start will start the container
+docker rm webserver1 -> it will not remove because container is in running state, so we have to stop it and then execute the rm cmd
+docker rm -f webserver1 -> this will forcefully remove the container even it is running
+
+docker logs weberver1 -> it will show the logs erros like while starting the container any error or not. if no error it will not show anyting
+
+docker stats webserver1 -> this will show the output for only webserver1 "shows cpu usage and other things"
+docker top webserver1 -> show what are the process are running
+docker system prune -> this will remove unsed container and unsed images to clear spaces
+
+DOCKER IMAGES :
+
+docker pull ubuntu:latest (here latest is tag name , if we have different version of ubuntu in repo and you need specific one means you can use that tag name with : so that it will download that specific one) these tag can be checked in docker hub
+
+Already we downloaded httpd image, adha vechi we will create a container and we have to mention the port that this container is going to use by docker run -d -it --name httpd -p 81:80 httpd (here 81 is cient port 80 is server port, so through 81 port we going to access this httpd application) 
+now one container created as webserver, go to webbrowser put ur ip:81 now it will work. 
+If you want we can create another webserver using different port and that also we can access through webbbroswer like ip:82 it will open the second httpd container
+
+so edhu mari neraya application images ah vechi erupanga,and also port numbers different ah confiure pani vechi erukalam andha image la, epo http nala namba 80 port nu kandupichachu, suppose different application or diffeerent port mention pani erundhaanga na epadi check panradhu 
+docker inspect dockerimage  --> adhula exposed ports la mention pani erupanga endha port open pani erukanga endha image ku nu
+
+for eg : learnitguide/busapp:latest la 8001 mention pani erukanga  so namba docker create pana sola
+docker run -d -it --name busapp -p 8001:8001 learnitguide/busapp  (edhula client port la namaba edhu venalum kuduthukalam)
+now docker create aita apuram   ip:8001 pota busapp website open agum
+
+docker ps -a --will show you which container using which port nu so andha port vechi namba access panikalam
+docker history imagename --> will show yu the image history what are the commits are made in that image
+
+Normally we will download the images from internet and then we use it. how we can load the image without internet and how to take the backuup of image file so that it can be used locally without internet. 
+
+docker save ubuntu:latest > ubuntu-bkp.tar    we have to save the file as tar only so that only we can load that in future
+so that above command will backup the images to our local folder . now choosse and another server which does not have this ubuntu images. move the tar file to that server . now docker images will not show the bck.tar file in image list . we hve to load the tar file to show that in image list. 
+
+docker load -i ubuntu-bck.tar   now this will load and it will show in image list now we can use this in container
+
+docker -rmi imagename - will remove the images . But the images should not used in any container then only it will delete
+to remove all the imamges docker -rmi $(docker images -a -q ) it will remove all the images
+docker images -a -q is nothing but it will list the docker images id . so we calling that variable 
+
+now we going to create a ubuntu container ussing images and then we made some changes in that container . now we have to create a our own image using our editeed container that we made some changes. 
+
+docker ps   will show the running container
+docker commit commitid customimage:latest   ( giving name as customimage and tag as latest)
+now it will create as image , now we can use this image to run another container
+
+to rename the image - docker tag customimage:latest learnitguide/customimage:latest   - new name is learnitguide/customimage:latest 
+ why we changed the name like this means, while we pushing this image file to docker hub thereshould be a username before image
+ 
+before pushing to docker hub we have to login to the docker hub - docker login
+and then docker push learnitguide/customimage:latest
+docker info will provide you the details which hub you are currently using
+
+######################################################
+VIDEO 4
+
+Docker file creation 
+
+docker file format will be "INSTRUCTION ARUGUMENT"
+
+FROM ubuntu:latest    -> This will downnload the ubuntu image
+RUN                   -> RUnning the command like yum install and system related commands. 
+                         If we have to run like more then 2 or 3 command we can use like below
+						 RUN yum install ex && yum install ex $$ etc
+COPY                  -> copy the file from local system to docker 
+CMD                   -> This is used for running application related services start and stop
+                          CMD apachectl -D FOREGROUND . While running the container if we given any command like ping google or /bin/sh then it will change the CMD arugument which we given inside the file and update the command that we used when running the docker container
+ENTRYPOINT            -> Same as CMD , but whatever the command given while ruuning container it will not 
+                          change the argument that we given inside the docker file
+
+LABEL                -> seting label  like this is prod or this env is stage like that
+                         eg :  LABEL "Application_Env"="STG"
+EXPOSE              -> WHich port the container shoould listen, we have to mention the
+                        Apllication port . for eg http , expose should be 80
+
+ADD                 -> This is used to transfer the file like tar, zip like that and also if we use ADD 
+                        command it will extract the file and move to destination. If we want the file same as zip and tar then we can use the COPY command
+COPY                -> to transfer file
+Volume              -> used to create or mount a volume   volume /data 
+                       volume /data:/data   /data is from local which will export and mount in container
+USER                 -> creating user name,grup etc
+WORKDIR             -> when launching the container or entering into it, it will land on on
+                       this specific path that you mentioned
+					   
+ENV                  -> setting environment variable, once the variable set it will be used in image building
+                        and also once the image build and lanched the container using that image same env variable will also be there inside the container
+                        ENV variable can be used while building the imange and also while runing the container
+
+ARG                   -> Same as ENV but this is used only when image building not while running the container. 
+                      
+
+Creating a docker file eg belowF
+
+FROM centos:latest
+RUN yum update -y
+RUN yum install -y httpd
+COPY index.html /var/www/html/index.html     (copying from local to continer) Create index.html in local
+EXPOSE 80
+CMD apachectl -D  FOREGROUND
+
+How to build the image from docker file
+
+docker build .   --> if the docker file is in the current directory we can give like . (if not give the path)
+we can also give -t and specify the tag name like image:latest  eg : docker build -t image:latest .
+Now we going to execute a continer using that image
+
+docker run -d -it --name web -p 80:80 image:latest  
+Now access the the site by IP+port 80
+
+Now we goning to edit the index.html file  type welcome in that . now if we want this information as webserver we have to again rebuilt the dockerfile with another image name and build the container with newly created image name. and also change the clinet port to 81 because alrady 80 is used
+put the image name as image:v1
+
+Try the CMD and ENTRYPOINT as eg  
+
+VIDEO 5  DOCKER NETWORK :
+***************************
+Three type of network default it will be there
+
+docker network ls
+
+Bridge - All the container inside this network will be interconect with each other and connect with outside the host also
+
+Host   - This network can be access through only the docker host. The container inside this network can be access only by the docker host
+
+None   - IN this network none can access the docker container via this network
+
+We can also create a network and attach a container on that network by giving comand --network=test-bridge(created manually for testing) while run the docker container 
+
+By default it will choose bridge network if we didnt metnion any network
+
+docker create test-bridge
+
+To find the ip of the container   docker inspect conatiner id or container name
+
+By mentioning the port  then only we can access through outsidde of the net . for eg -p 81:80  so while we giving the 81 port with host ip then it will reach the container which opens with port80 and assigned 81 as client id.
+
+docker port containername  -> this will show the forward port list for the container	
+
+Instead of -p if we give -P we dont need to mention clientid  it will automatically pick up the clientid port . No need to mention any port id for the option -P
+
+#######################################################################
+Docker -6   VOLUMES
+
+Default ip for docker - 172.17.0.0/16  -> these ips are used for containers
+
+3 types of volume  1- bind mount 2- volume 3-tmpfs 
+
+tmpfs -> this is not permanent once container deleted it will also be deleted
+bind mount -> for bind volume we use -v while running the container this will mount any directory in local host to the container
+Volume -> creating a volume in docker area and mouting in container 
+
+
+docker volume create volumename   -> docker volume will be create in /var/lib/docker/volumes/volumename - this path is also called as docker area
+docker volume inspect volumename -> will show you where the volume is located
+
+create two volume  app_vol and data_vol
+
+docker volume ls   will list the volume
+
+docker run -d -it --name ubuntu1 --mount source=app_vol,destination=/data ubuntu /bin/bash  - here if /data is not available in destination means it will auto create the folder in container
+
+login to container and create a file inside the data it will show in docker area (/var/lib/docker/volumes/volumename/_data) and if we create a file in docker area it willshow in container 
+
+If we remove the container , the files inside the /data will be there in local . So we can use that for another container also
+
+Bind mount :
+
+now we going to mount the volume from local directory to container (any folder to container) in this we have to give -v for mount
+
+docker run -d -it -v /mnt/data:/srini ubuntu /bin/bash - this will mount the data folder to container as srini
+
+same whaterver files created in srini will be reflected in /mnt/data
+
+###################################################################################
+Video 7 docker swarm 
+
+Docker swarm is used for clusturing and continer orchestration ( management of multiple container)
+
+Advantage of docker swarm
+1 orchestration(manage) 2 high availablity 3 scaling 4 multi-host networking 5 service discovery & load balancing 6 Rolling updates ( upgrading application without downtime)
+
+Create three Vms , One is docker master and other two is docker worker nodes with same linux os and install docker in all three vms
+
+setting up docker swarm in master node
+
+docker swarm init --advertise-addr ip(masternode ip). once you run this it will enable the swarm in master node and also it will show the token to make use of other nodes to join in this master node
+
+If we want two master node for highavailablity we can join another master node to this master node by running the below command which will tell how to join the other master node with token
+
+docker swarm join-token manager -> this will tell how to add other master node to this master node this will give cmmd  with token
+
+NOW WE GOING TO ADD THE 2 worker nodes to join master nodes
+
+While we created swarm in master node it will give token to join the worker nodes . so copy that token and run that command in other two worker nodes , so it will be added 
+
+token will be like : docker swarm join --token djfakdkfhahfha masternodeip:2377   
+
+Now go to master node and give command - docker node ls -> it will list the master node with other two nodes that we added
+
+docker info will show swarm is enabled  and no of nodes and which is master node 
+
+For ref : if we have to remove node from swarm  -> docker node rm dockerworkernodename this will remove the node
+
+we can also promote the workernode as masternode and masternode as workernode by demote and promote command
+
+In dockerswarm if we have to create dockercontainer in cluster mode we have to use service 
+
+docker service create --replicas 2 -p 80:80 --name web1 httpd  -> This will creat two container and place in any three nodes based upon utilization and also it may place the container in same node also
+
+docker service ls  -> will show the list of services that are running (here services is container)
+dockre service ps web1 -> this will show where is web1 container running in which nodes they are running 
+
+docker service create --mode global -p 81:80 --name testweb httpd --> if we give global means this will create container in all node . if we have 5 workernodewith masternode it will create container in all 5 nodes equally . we no need to mention the number it will place the container in all nodes
+
+We can test it through webbrowser whether webservers are working
+
+Now if we check docker network ls , there will be addtional network will beadded name- ingress,driver- overlay.  Overlaydriver la oru ingress network create aitu erukum if we enable swarm
+
+To scale up a service(container) sudo docker service scale web1=5 (already we have 2 now it will create extra 3) to check that sudo docker service ps web1
+
+in this if we give scale=4 it will scale down to 4 container 
+
+We going to do update and rollback the service(container):
+
+Before doing this download learnitguide/busapp:2.1 and 2.5 whatever u wish . to check the update and rollback
+
+remove previous services from the nodes . and create a new one 
+docker service create --replicas=2 -p 8001:8001 --name busapp learnitguide/busapp:2.1 . Now 2 container will be lanched in differnt nodes
+
+To update the service(continer) : docker service update --image learnitguide/busapp:2.5 busapp -> now it will upgrade to 2.5
+
+To roll back to the previous one : docker service rollback busapp -> it will go to previous one as how it was before 
+
+To promote or demote the leardernode:
+
+docker node promote workernode2  -> this will promote workerrnode to master .now two master nodes are available  . it will give status as reachable
+
+docker node demote workernode2 -> it will demote the workernode from master to workernode 
+
+
+Now we going to make the node Drain, pause and active 
+
+Drain  : when we need to do maintainence in particular node we can make that node drain which means all the container that node will move to another node automatically . no node will be running in drained node
+
+Pause : In a particular node you dont want any contaniner to be placed newly or any activity we can put that node in pasue mode . so that if we create any serivce it will not be placed in that paused node
+
+Active : which will accept all 
+
+docker node ls -> will list all the service that running in the nodes 
+
+docker node update --help will list the options
+
+docker node update --availablity drain nodename(dockerworkernode1) . no all the container will move to other node
+
+docker node update --availablity pause nodename(dockerworkernode2) . no new container will be placed in this
+docker node update --availablity drain nodename(master)  -> now master has one node but it cant move to anything becase one is in pause mode other one is in drain mode.  but still the masternode will become drain mode . but the container inside the masternode will wait for other node, once other node becomes active it will automatically move to that
+
+
+
+
+
+
+
+
+##############################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+Docker system events -> will show the error or problem 
+docker images
+docker search busapp or httpd
+docker pull httpd
+docker ps -a --> this will show running and stopped container
+docker run -d --name webserver1 httpd              -> if this not started we can start by docker start webserver1
+
+docker exec -it webserver1 /bin/sh or /bin/bash     -> to get into running container
+
+docker run -d -it --name webserver1 httpd /bin/bash  -> for now its working, it will run the container in background
+
+docker exec -it webserver1 /bin/bash                 --> getting into that created container
+
+docker exec webserver1 mkdir /tmp/srini               ->this willl create a directory without entering into the container 
+
+docker rm webserver1 -> will remove the webserver1 only if it is stopped state
+docker cp file webserver1:/tmp/   -> this will copyy the file from server to docker container
+docker logs weberver1 -> it will show the logs erros like while starting the container any error or not.
+docker stats webserver1 -> this will show the container memory usage and cpu percentage , pids
+docker top webserver1 -> top informations
+docker system prune -> this will remove unsed container and unsed images to clear spaces
+docker run -d -it --name webserver -p 81:80 httpd (here 81 is cient port 80 is server port, so through 81 port we going to access this httpd application) note: in 80 port we can also create other webserver and access it through 80 . so dual webserver can access with different port
+docker run -d -it --name busapp -p 8001:8001  -> create pana solavae namba client port metnion pani create panalam. SO that IP:client port pota open agaum page
+docker inspect dockerimage  -> we can check in which port the app is running 
+docker save ubuntu:latest > ubuntu-bkp.tar  -> This will save the image as tar file which can be export to other server and make this image use of it
+docker load -i ubuntu-bck.tar   -> Loading this tar file to images . The moved tar file will not show in the images list, so we have to load this as image file to make use of it
+docker -rmi imagename - will remove the images . But the images should not used in any container
+docker commit commitid customimage:latest  -> to make a copy of running container as image , so that we can use that image in differenct container - commit id will be in running container list (customimage:latest is the name of the image that has created as copy)
+docker tag customimage:latest srinivasan10691/customimage:latest  -> this will rename the image so that we can push that in docker hub, why we renamed means we need userid before the image name so we renamed 
+docker push srinivasan10691/customimage:latest -> this will push the image to your docker hub, before that you have to login to your docker hub in server 
+docker login  -> this is used to login to your docker hub
+docker info -> this will give you the information about which hub you  currently logged in
+docker build . or docker build "path where dockerfile is located "  -> which will build the image with dockerfile
+docker build . -t image:latest -> this will give tag name for the image that you creating with docker file
+docker run -d -it --name web -p 80:80 image:latest -> once image created we can create container
+docker network ls  -> list the network like  bridge, host, none
+docker network create -> used to create a new network 
+docker network create -d (drivername) newnetwork  --> here driver name is bridge,overlay,host like that
+--network networkname  -> if we have to run a docker in specific network , we can use this --network while running the container . By default it will choose the bridge network which will be interconnect with each container and  host network and outside 
+Host -> this network will only connect with host and interconnect with each container which are created in that network
+None -> container will not connect with any host or interconnect with other container
+docker port containername  -> this will show the port forwarding on that container
+Default ip for docker - 172.17.0.0/16  -> these ips are used for containers
+types of volume  1- bind mount 2- volume 3-tmpfs 
+docker volume will be create in /var/lib/docker/volumes/volumename -- this is also called as docker area
+docker run -d -it --name ubuntu1 -v app_vol:/data ubuntu /bin/bash - creating volume and running container   This will mount app_vol in container as data  -> this method is volume method
+To create a volume "app_vol" in this method the below command is used
+docker volume create app_vol  -> this volume will be directly create in docker area
+
+docker run -d -it -v /mnt/data:/srini ubuntu /bin/bash - this will mount the data folder to container as srini  ( Any folder from docker host to container . this method is called bind mount )
+
+
+
+
+
+
+
+
+
+
+			   
+					   
+ 						
+						 
+
+
+
+
+

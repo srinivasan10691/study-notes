@@ -1,0 +1,300 @@
+Artifact   : the file that contain both the compiled code and resource. for exaample .war file. this will have all the compiled files and its dependencies. IN java the artifact would be in format .jar, .war,.ear 
+Aartifact repository  is a repository which can store mulitple verions of artifacts.
+
+If any updated version faced some issues , then we have to roll back to the previous version in that case we need to again go to git and take the previous version of code and build again . but in this case artifactory repository is stored already .war file with the previous version so that we can use that easily instead of doing build again
+
+Jfrog artifact : it is used in devops for mulitle purposes. one of its main purpose its to store the artifacts(readily deployable one)
+
+second thing jfrog can be do is -> helps in downloding and managing dependencies
+Eg ; while building the code build tool may need some dependencies to build the file, in that time jfrog can come into the place and help to download the dependencies and store in the local and that can be used by build tool for the process. (build tool also can download the dependencies) 
+jfrog will also store meta-data about which person downloaded the war file or push the war file for security resons
+jfrog supports for storing and distribution the docker images also.
+
+install maven, jfrog and java in ec2 instance.  in this case we using jfrog as container, download the dockerimage for jfrog and run the container.
+Install git and download sample code 
+set environmental varial for maven using export 
+and now try to compile the code, maven wil complie the code  (still not its connected with jfrog)
+click libs-snapshotlocal and genrate maven settings ->genrate settings . now we wil get xml code, just copy that code and go to ec2 isntace root/.m2/create a file setting.xml and paste the xml code. This will connect the maven to jfrog (we have to enter the username and password for jfrog) .
+now if we compile again, it wil build the package again, but it will get the dependencies from the jfrog not from anywhere. (still the war file is not stored in jfrog)
+go to jfrog click libs-snapshot and we will get a xml code again copy that and edit the pom file and enter this xml after the dependencies line. 
+now again build the package. it will now get the binaries from frog to build the package and store the war file in the jfrog. 
+
+
+
+
+7.55.10
+
+
+
+@#########################################################################################
+Packer : used to create a custom image using json template. In template we have many modules to create an image. below are listed
+
+variables : we  can use this to  mention our aws scret key and access key to access the aws resources
+Builders :  we have to mention whether the image that we creating is used for aws or azure, or vm. IN this case we using aws so we have to mention as aws-ebs and we have to mention the details required for creating the image. Sourceimage will be taken from amazon ami
+provisioner : once the server is ready in any platform  inside the server what are the third party custom software you need to install that we have to mention in this provisioner field. like yum install httpd, etc 
+post-processors - after the image is build,they can be used to uplad in artifacts
+
+
+note : Java version should be same in master and slave machine
+
+
+
+
+
+Jenkins:
+************
+
+Jenkins is integration tools, which will integrate all the devops tools.
+
+This tools is written in java, this tool prerequiste java.  First need to install java and then only we need to install jenkins. so java is must for this tool. 
+
+Jenkins.io   --> we can get the jenkins file to download for different os and versions
+
+java -version ---> will show the verison of java .  Let us start with java installationn.
+
+sudo 	add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt install openjdk-8-jdk
+java - version  ------java verison 1.8.0_252       1.8 is called as 8
+
+
+Jenkins installation:
+*************************
+default port no for jenkins is 8080
+
+
+wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key |sudo apt-key add -    (this is for key download. this key is a supporting key for installation of your jenkins.
+it will give output OK
+
+binary location update
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian binary/ > /etc/apt/source.list.d/jenkins.list
+
+sudo apt-get update
+sudo apt-get install jenkins.
+
+
+Once installed  --> ip:8080   will open the jenkins installation page to start with . copy the password from the server and paste it in the page that asking for admin password.   
+The password will be in /var/lib/jenkins/secrets/installadminpassword.  copy the password and enter into the webpage to proceed further.
+
+install suggest plugins --> this will install the needed plugins with jenkins (like git, etc)
+
+now, all the managed plugins installed, now create a admin user --> enter the details thats asking to create user
+Once admin user is created and password is created, the install password that showed in "/var/lib/jenkins/secrets/installadminpassword" will be automaticcaly removed
+
+Now jenkins is ready !!!!!!!!!!
+
+Now we have to check where will be the new password that we created will be found in server( search for it )assignment and it will be in encrypted format.
+
+Lets start with jenkins now....
+
+**********************************
+Configuring slave node to master node :
+
+We need to install java on slave node , same java version shouldbe installed what is installed in masternode
+
+manage jenkins -> manage nodes and clods -> add a new node 
+
+no of executer : 2 ( parrlelly it can run 2 jobs at a time ) if we give one then only one job at a time .
+To avoid running job in master node -> put no of executer : 0   so that in master node it iwll not run any task by mistaken also.
+enter the details that asking for adding the node (like label name , no of executer, working directory)  once done 
+we have to install agent.jar in the slave node to communicate with the master node . this jar file link will be given whle adding the node. so follow the process and fianly the node wil be addded to master.
+
+
+
+
+there a mulitple projects are available , like freestyle project, pipeline project, multi-configuration project ..etc
+New item --> name of the project -- freestyle project 
+
+sourcecode management -> git (this is pulgin already installed while installing jenkins, so it iwll show git in sourcode managment)
+buid trigger  -->   trigger remotely, build periodicaly, build after other project build,
+build environment --> where to build , how to build 
+build ---> what to be build  ( shell, sh ) like that. 
+
+add build step -> execute shell -> and enter the command "date"  and save, now job is created
+now job got created, GO to main page and click the trigger button so that it will execute the job
+We can see the output in, click the job, under the build history we can choose the history of the job and open console ouput. It will show the output with succesfull
+
+In main page , there is staus, whether,name of the job, last sucess, last failure, last duration , and trigger button
+
+Status -- will show the last job status
+whether --- it will show last 5 jobs status like showing whether conditions,  sunny means its all good. 
+
+Go to the test job, configure(we can change the configuration related to that job)  change the  command date to dat. now save and run the job it will fail
+now the satus will show the red and whether will show cloudy. if again failed it will show rainy . again it failed means it will show like strom . 
+if we have to delete the project, go choose the job and delete the project.
+
+We can have the job running oneby one, like once dev job completed then test should start and once test job completed then prod should be start. These can be confgiured in post-build actions. go to dev job and choose configure --> post build action --> enter the test job name and choose when it should be start or it shouldnt be start
+
+like we have three options in post build actions
+
+trigger only if stable (whether should be sunny), trigger even the build is unstable(stauts should be blue, but whether it can be anthing) , trigger even the build fails.  
+
+We have to choose any one above to trigger the next job (test) .. like this go to the test job --> configure->postbuild -> type the dev job name . like this we can quueue the job with the status.
+
+
+now if we trigger the job on dev environment it will trigger all the other jobs bassed on the success rate.
+we can make this automate without triggering manually using build trigger .  Using build trigger option we can set the cron time when to start the job.
+So go to dev job and configure and build trigger set the cron. Now automatically it will start the dev and also all the jobs based on success.
+
+We can also call the job by remotely.:
+go to dev jobs -> configure -> build trigger -> build job remotely (eg we can use in scripts) .
+Once we choosed the option it will ask us to enter the token id( we can give whatever we want line 1234 ) so using the jenkin url with the token id if we run in the webpage means it will start the job.  But only thing is not everyone can start this , onlly authorized person who has users in jenkins. 
+The url will be like = http://ip:8080/job/devproject/build?token=1234    -> if we run this job will be start.
+
+
+So what problem here is the user1 can do anything like deleting the job or modify the job. we have to restrict.
+go to manage jenkins -> configure global security -> Authorizzation inthis we have logged in users can do anything . we have to change this , we have to give role based authourization to user . but there is no role based authorization in jjenkins, so we have to install plugins related to that.
+
+Go to jenkins plungin list --> go to this site  
+and to to plugins.jenkins.io and search for role --> it will show role base authorization stratergy
+now go to jenkins, manage jenkins -> manage plugins -> choose available --> search for rolebase authorization -> and install without restart. 
+
+
+Now plugin installed, now go to manage jenkins -> configure global security -> authorization  -> choose the role based authorization and save it..
+Now we will get an new option "manage and assign role" in the manage jenkins option.
+
+there are two types of roles, one is golbal role and another one is item role.
+Gloable role, --> the permission is for jenkins console
+item role ---> the permission for the project level access.
+
+Create a role called employee where all the user will be under that role. give read access only
+In the item role create a role for devloper and tester  --> so devloper has full access for devloper project and test has full access for tester project.
+
+
+Now go to assign role:
+Now add the user1 and user2 to employee role.             -----------this is for global  . so both user can access the console
+And add the user1 to devloper role and user2 to tester role.  ---this is for item role . so user1 can access dev project and user2 can access test. 
+
+
+Assignemnt ---> till now we managed by user.  try to handle this using group.  what plugins should be installed. check and work.
+
+################################################
+VIDEO 2:
+
+Now we going to install the tomact and deploy our application in that. 
+download the tomact tar.gz 
+download any sample war file from website  --> sample war file download (search it) . Put both files into remote server(where jenkins installed)
+copy the tomcat file to /opt and extract it. 
+Here we have a problem, both tomcat and jenkins has same port number 8080. so we going to change the port number for jenkins.
+Go to /etc/default/jenkins  --> this is jenkins default configuration path. 
+change the http_port =8080 to some number(9999) and the restart the jenkins service and now jenkins canbe accessed via port 9999..(now a days it cannot be changed due to some issue so that change the port for tomact).
+NOw go to tomact folder and go to bin and then star the service for tomcat. now we can access the tomcat via 8080 and jenkins via 9999.
+Now we going to deploy our application in the tomcat via jenkins:
+
+Now create a job called autodeployment job in freestyle
+in the build -> choose shell -> just enter any command that needs to be execute before war file deploy ( some time in realtime they use to check whether pre-requsite packages are installed or not via this) for now just simply entered the "date" 
+And then choose post-build action -> in that we missing deploy(war/ear) to container option so we need to install plugins related to this. so that options will be enabled. 
+install the plugins called deploy to container  and then we can see that options in post build actions. (will continue below after few instructions)
+
+all our projects will be stored in /var/lib/jenkins/workspace.   
+if we create a project in jenkins with name test, it will not show in workspace because only after running the project only it will be list in workspace.
+So just creating project will not reflect in workspace we have to run atleast one so then it will be list under workspace.
+
+so now we have to just run the autodeployment project (for simply), so that it will be listt under workspace.
+now once folder created copy our sample war file and paste into that folder . 
+Now go to post build actions and choosee the deploy to container option. it will ask for .war file , enter the name of the war file sample.war (or else we can give       **/*.war this will be gneric) and then it will ask context path enter sample . 
+Now conainer field ( where you need to deploy)  we need to choose the tomact version that we installed. and enter the tomcat url in that field ip:8080
+It will ask for cred. in this we have not set any cred for tomact. to study purpose we will assign cred and work on this
+go to tomact folder and edit tomact-user.xml and there will be some lines to create a cred for tomcat -search in net and do in that way. once done save it and restart the tomact service. now enter the cred and save. Now when we trigger the job it will deploy the war file in tomcat. we can acess the web and check the application by ip:8080/sample .
+
+*******
+
+PIPELINE -- it is an arragment in the continues manner with continues deployment
+Difference between freestyle and pipeline --> in free style we use upstream and downstreatm for flow.  but to check what jobs are below which jobs we have to go inside all the jobs and have to check which is painful. but in pipeline it will show cleary what job will going to come and what wil be the next job without entering into the each project conifugration.
+
+Install the build pipeline and delivery pipeling plugins in jenkins .  build pipeline used by developer  and delivery pipeline used by tl manager like thatt. 
+
+this will show the projects in differnt style.  just for different views and styles and easy view of pipeline jobs we can use these plugings. 
+
+Assignment: what is declaritive pipeline, how to configure email settings in jenkins. 
+
+
+PIPELINE project -> which will orchestrates long running activities . organizing complex that do not easily fit in free-style project
+
+############################################################
+Video 3 :
+
+Master - slave model
+in master jenkins and java need to be installed
+in slave , java alone is enough
+
+
+To connect the master with slave:
+Go to .ssh in the home folder and you can see the authosrized key , copy that and save that in the name of id_rsa.pub . and the copy the content inside the .pem file and save that inn the name of id_rsa (private)
+Now go to jenkins, configuration , user and management and add the node  with required details , like IP , private key (slave node) and executer (is nothing but no of task that will run at a time) give as 2 .and it will ask the path for where the jenkins workspace should be place and then save . Now slave node is connected with master node.
+
+now we going to create a job and make that runn in slave node.  create a job and while creating the job in genral tab we have a option "restrict where this project can be run" choose that option and enter the label that we named for that slave name. now run the job it will run it in the slave node.go and check the slave machine workspace the folder will be created for new job. 
+
+paramaterized job :  using user input only job will run . before executing the job it will ask for user inpuuts once inputs given it will run the job
+paramaterized trigger job : with the help of other job output it will run the job, it means it will take the other job output as a input for this job and run it. 
+
+###############################################################
+Build trigger :
+
+build periodically : according to our cron entry it will pull the code from the git and start the task
+poll scm : it is also same like build periodically option, but this will only trigger if there is any change in code(based on the cron time), otherwise it will remain same. but build periodically will not check the changes in code it will trigger as per the time mentioned in the cron. 
+
+
+publish over ssh -> plugin used to copy the artifacts from jenkins to docker host
+deploy to container -> used to deploy the war file to the target
+#####################################################################
+Fress style : used for simple task and all the configuration is done via gui 
+PIPELINE:  Job running using script or automating the task using script . below are the two types
+scripted pipeline
+declarative piepline 
+	
+Both are same , difference willbe in syntac and behaviour will be difference
+
+for scripted , starting function will be node
+for declarative pipeline, starting function will be pipeline
+
+
+
+In free style project, if any task failure we have to go through console output and neeed to check the error and where its failed but
+in pipeline project , it will be in clear view and gui, it will show where it failed (whether its failed in git, or build, or deploy) so easy to find the errors and rectify it.
+
+
+IN declartive piple we have option to restart the specific task if its failed, like if its faild in build, we dont have to start from git, we can restart the build alone. For this we have to install the pulgin to enable the restart option.
+In scripted pipeline it will restart the task from starting. 	
+
+
+
+Till now we have entered all the scripted line into the jenkins directly and run the task. 
+In real time, they entire script will be in one file (jenkins file) and it will be placed it GIt repo . and in the jenkins we have to mention that pipeline script is loacted in the git . SO now onwards jenkins will go and fetch the jenkins file from git and start the task according the intruction that given in jenkins file.
+
+So that we can keep track of the previous changes what we have done in jenkins file( version control) and also easy to maintain. 
+
+###############################################################################
+Jenkins shared library :
+ Is a concept of having a common pipeline code in the Version control system that canbe used by any number of pipeline just by refering it.
+
+global pipeline libraries  --- install this plugin for mentioning where our  shared library is located
+
+Shard libraies is nothing but , we have some task which is already created in groovy script. so if we have to use that function in your current project, just we can call that function into your script. so that that task will be done . 
+but while writing the script we have to mention that in first line like below
+@library('myscript_function@master') ---- so that it will check your library path and use this function wherver you calling that in your script.
+The library path location will be informed in the global peopline option which we install as plugin.we have to give one name for this function that name will be called in the script ("myscript_function")
+all these functions should be created under vars folder in the git reposigtory . eg ( foldername -> vars -> function scripts )
+
+
+#########################################################################################################################
+
+Jenkins password reset -  edit the config.xml  /var/lib/jenkins/config.xml and in that there will be a line name security  in that line already there will be "true"  change that to false and restart the jenkins. and again login without the password and go to user setting and change the admin password (again dont forget to change back the authentication enable ) 
+
+########################################################################################################
+
+#!/bin/bash
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo amazon-linux-extras install java-openjdk11 -y
+sudo dnf install java-11-amazon-corretto -y
+sudo yum install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+yum install docker -y
+service docker start
+usermod -aG docker jenkins
+usermod -aG docker ec2-user

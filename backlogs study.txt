@@ -1,0 +1,25 @@
+devops 2types project workout
+Git rebase and check other interview questions videos
+AWS  SNS and SQS vides with correct explanations
+ASG desired capacity max and min
+Docker layer
+Docker compose
+Reverse proxy
+
+
+######################################################################################################
+
+EKS creation 
+jfrog creation
+jenkins creation
+
+
+
+how to change port number jenkin
+password reset jenkin
+backup jenkin
+mvn clean package differece
+
+
+
+

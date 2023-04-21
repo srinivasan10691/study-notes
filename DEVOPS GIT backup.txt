@@ -1,0 +1,178 @@
+GIT
+
+Types of version control
+
+Centralised version control 
+Distributed version control system 
+
+Centralised version control :
+
+There will be one repository server  where our update and commit will  be directly make changes in the repository server
+
+Distributed version control :
+
+IN this we have our own local repository in our server where all the changes that made wil be saved in local repository(in our own server) once everyting done then we will push to the main repository server . 
+
+GIT is a distributed version control 
+
+Once we install GIT in linux we have to mention user name and email for git configuration below are the commands
+
+git config --global user.name "seenu"
+git config --global user.email "seenu@gmail.com"
+
+create a folder where you going to work and make that folder as version control folder by giving below command
+git init foldername
+Once done .git folder will be created under the main folder. So now it is changed as version control folder
+.git folder will save all your metadata
+
+git add filename - it will move the file to staging area 
+git rm --cached filename   -- it will remove the file from staging area
+
+git status  -> it will show what are the files are in staging area and what aree the files are untracked (it means the files is not moved to staging area)
+
+So now if we have to move the files that are in staging area to local repository use the below commands
+git commit  -> this will move all the files that are in staging area to local repository  (-m) option we can use for purpose of commit
+
+git commit -m "files are added to staging "    any message we can give 
+
+Now if you give git status it will show the untracked files alone , not the staging files because it is moved to local repo
+
+Already we have moved one file in staged area and then moved to local repository  . now we going to make a changes in that file again . once the file is changeed with some new content then use git status , it will show that file has some changes made
+
+to revert back we can use git restore filname so that it will revert back to the old one. or if you want to move that file to thee stage which the editing lines then we can give git add filename and then we can move to local repo by "git commit" 
+
+Git log --> wwhich shows all the log that we commited to staging . 
+in that log it will show the all the commit which we did each time. if we have to move too specif commit (that meas old commit ) we can use thee below command
+git reset --soft commitid
+IF you give --hard  then it will remove all the commits that are updated after the commit that you are currently choosed .
+if you didint give any soft or hard it will automatically take it as soft. so use soft to safer purposse
+
+correct example for soft and hard:
+
+soft will remove the changes from local reepo . before commit to local repo the file willbe in stage right so it will be back to stage itself . its nothing but it will all go to staging so we can commit again if needed .
+
+Hard will remove the changes from repo and also from staging. and also in the orginal foldeer also it will be removed
+
+
+
+git revert commitid (which will remove the commit that maded on that commited time) and also it will make a log that revert has been maded . we can see that in git log . if we revert one commiid then it will completely remove tht sepcific id alone in both staging and loc repo (like hard) but this one is specific id
+
+if we give git revert commitid --no-commit   
+
+Till now we have worked till the local repo , now we going to commit with repository
+
+There are three types of local  repository is there, git hub, bit bucket, git lab (differnt vendor)
+
+Create a account and create one folder in that account (repository) 
+we can have access through that repository through https or ssh ( there will be a link to access)
+The url will be in form of https://github.com/accountname/foldername.git
+if we have to clone datas from the github to server then use the below command, before that create a folder where the files should be placed
+git clone url
+So whatever files in the repository will be clone inside your folder . 
+Now create a file1 and file2 in your server (insidee the folder where all the clones files are downloaded ) 
+and git add . and then git commit -m "new files added" which will be added in local repository . now we have move that to repository
+git status (which will show the branch name ) here the branch name is master 
+
+git push orgin(source) master(branchname)  "git push orgin master" now it will ask for username and password to commit to the repository .  Now you can go to githup and check whetheer the commited changes has been made in repository
+
+we can use git pull -r for sync the data from repository to the folder
+
+clone - it means it will download the full folder ( first time we used for clone the whole directory to server )
+pull  - which will sync the data 
+git remote -v will show where the push and pull destination(repository) is placed for the particuular folder in our server (folder that we cloned)
+If we have to change the url for push and pull use the beloow command
+git remote set-url orgin url (change thee url that you need to replace it means other folder url in the repository) this comand will change both push and pull url (check it by git remote -v). if you have to change specifically push or pull use the below one
+
+git remote set-url --push origin url 
+git remove set-url --fetch orgin url   this is for pull 
+
+Now the concept is if we have a folder full of files that we have to move to repository . that folder is not already initialized with git 
+
+) First make the folder as " git init foldername"  and then make all the files moved to stage and then move to local repository as we done before. Now all the files are in local repository. now we have to move theem to main repository 
+
+Now create a folder in main repository and while creating done choose any option in that form . once created copy the url 
+
+now if wee give git remove -v in that folder there will be no url linked. now we going to link the folder to the url that we creeated
+
+git remote add orgin url (this command should be run inside the folder where all the files are there)
+git remove -v now it will show the push and pull url 
+now we going to push the files to remote repository by below command
+git push -u orgin master (this will push all the data to repository ) -u update 
+
+Now we are going to look about branches 
+
+Create a new branch by git branch brachname (inside any folder that we are working with)
+git branch develop -> created a new branch and if you need to switch to devlop branch git checkout develop (it will move to develop
+to check which branch you are in git branch is enough it will show
+git checkout -b qa -> this will create a QA branch and then switchover to it
+Now switch to develop branch and create a file and make some changes in some other file and commit to local rep
+Now switch to master branch and now you cant see the changes that maded in devlop
+now switch to qa now , now we going to merge the data from develop to qa  "git merger develop qa" this will merget , so now both will be same content. note here qa is a target  so we have to be in qa branch and then only we have to entere the command 
+git branch -d qa will delete the branch 
+
+now we made some changes in master by creating master1 master2 file and then making some changes in feature (brannc) feature1 and future2  . So now we relasing that the changes made in feature should be done in master branch . so we have to apply the changes that made in feature to master by git rebase feature master (feature to master)
+
+you should be in master while doing the above things, always we should be in target
+
+Git cherry-pick is used to pick up single commid id and apply it on the target . as we seen above all the changes that made in feature that has been synced to master. but here we are choosing single commitid to apply in master
+create a file in feature pick1  addit and commit it and then pcik2 addit and commit it  pic3 add it and commit it . now go to target and we needthe second commit alone to be sync with master branch so we have to give below command
+git cherry-pick commitid  this commid alone will get synced with master branch
+
+git stash -> we are working on some files and which are saved in staging area . but suddenly we got other work which should be complete before the previous one . So we move the staging area files to background and work on the new task and once completed we can revert back the staging area files which we moved to backgrround . git stash list will show the list of items that are move to memory (background) git stash pop number(list number which we have to get back to staging area )  git stash pop  (which will get back the recent list to staging area)
+
+Create a file1 file2 and add it to staging area , and then move them to background by using stash ,now you can see there is no files in staging area . now we can revert them back using git stash pop and git stach pop number
+
+
+
+###########################################################################
+Commands
+
+https://www.youtube.com/watch?v=1jM-M5ita6c&list=PLqz0JGiufLh7KWr2fMkJdY6NvFYpjvdcx&index=2
+
+GIT commands to be remember
+
+git config --global user.name "seenu"
+git config --global user.email "seenu@gmail.com"
+git init foldername  -> to make the folder as version control folder
+git add filename  ->  files will be added in staging
+git rm --cached filename  -> Files will be removed from staging 
+git status  --> show the status of files which are not tracked and which are ready to move to local repo
+git commit -m "message" ->  Aply the changes that are in staging to local repo
+git reset --soft commitid  or git reset --hard commitid     
+soft will remove the changes from local reepo . before commit to local repo the file willbe in stage right so it will be back to stage itself . its nothing but it will all go to staging so we can commit again if needed .
+Hard will remove the changes from repo and also from staging. and also in the orginal foldeer also it will be removed
+git revert commitid --no-commit  -> which will remove the specific commit ( the changese that you commited on that commitid will be deleted)
+git clone url -> which will clone the main repo to your server folder
+git log -> shows the log and commitid , what are the commit you made
+git push orgin master -> pushing the commited things to main repo (here master is branchnname) origin is source
+git pull -r -> will pull the data from repo 
+git remote -v -> shows the push and pull destination url 
+git remote set-url --push origin url  -> for changing the desti url for push(we can give different repo url)
+git remote set-url --fetch orgin url  -> for changing the desti url for pull(we can give different repo url)
+git remote remove -v  -> the linked url will be removed from the folder
+git remote add orgin url -> linking the folder to repo by attaching repo url to this folder ( we can check by git remote -v)
+git push -u orgin master  -> push the data to repo (here master is branch name) -u update
+git branch -> will show which branch you are currently in
+git branch branchname  -> will create a new branch
+
+
+#################################################################################
+git fetch vs git pull
+
+eg : lets say you already clone one repo to your local repo. and after few days you need to update your local one with the updated changes that made in repo
+
+git fetch - will show what are the changes that are made  , but it will not merge to your local
+git pull - the same as above but it will merge to your local repo
+
+git merge vs git rebase:
+
+both are same ,like merging one branch to the other  . but git rebase  will give you linear code history 
+
+.git -->  all the information about our repository wil be stored here 
+.gitignore -> if we have to ignore a specific file to move from local to repo  we can put that file in this folder
+
+#######################################
+study merge conflift, rebase, clone vs fork
+
+
+

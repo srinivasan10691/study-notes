@@ -1,0 +1,24 @@
+
+Diff ecs/eks
+Ulimit
+patching
+
+about ur self
+Idea about moodys
+How to migrate the datas to s3 from on premis
+daytoday activites
+IAM policy syntax
+Chalanges faced in CI/CD 
+AWS migration concepts 
+linux troubleshooting questions and application related questions 
+Terrafrom used in your company
+
+
+
+AKIAVKPNM65QVTCEFUA7
+
+zX61HRQWoYQg3thgvHAoZZ//VFSJVgQ25ewngsBD
+
+
+jenkins groovy
+kube    go language

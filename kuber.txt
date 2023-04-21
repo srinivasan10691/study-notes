@@ -1,0 +1,855 @@
+ Introduction : A container orchestration tool (engine)
+
+orchestration is nothing but management (organising). managing all container applications. with the help of kubenetes orchestration engine.
+
+Go progamming language . big benifit converting group of container into logical units (pod).
+
+
+Advantage :
+
+self healing : if one container down it will self heal the pod.
+Automated rollbacks , auto scaling , load balancing. 
+
+cluster nodes lam manage panradhu kubernetes master
+
+kubernetes master have many controlers to control your applications that deployed in worker node.
+
+top 4 main controllers in kubernetes master :
+API server, scheduler , controller-manager , etcd
+
+API server - Main controlled, will intract with API . 
+scheduler  -- scheduler your pods
+etcd   -- key value pair model, cluster information , worker nodes and pods. these information will be stored in this.
+
+WOrker node :  Two main components  kubelet, kube-proxy
+
+These two must running
+
+Kubelet - sharing the information with master.will share pod informations like whether conntainer is running or not and other informations
+The kubelet runs on each node and enables the communication between the master and slave nodes.
+ 
+Kube-proxy  - network related communication it will help. like port forwarding and loadbalancing. 
+Kube-proxy is responsible for directing traffic to the right container based on IP and the port number of incoming requests.
+
+Inside pod we can add mulitple containers. 
+
+Kubectl is kubernetes cli  managing the worker nodes.
+
+Create kubernetes cluster using kubeadm  ..  
+
+swap must be in off, otherwise while installing kubernetes cluster it will throw error. sudo swapoff -a (swap off) . it should be done in all nodes.
+
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl   ( installing curl and apt-transport-https) - all node
+
+sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg |sudo apt-key add -    (kubernetes package install panradhuku munadi curl command use pani key add panrom)   same in all node. 
+
+Now adding kubernetes office repository:
+
+sudo apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"   all node
+
+sudo apt-get update && sudo apt-get install -y kublet=1.20.0-00 kubeadm=1.20.0-00 kubectl=1.20.0-00 docker.io  allnode
+
+sudo systemctl start docker && sudo systemctl enable docker   allnode
+
+TIll now we done it for all  node:
+
+Now we going to initialise the cluster from master node. all steps is from master from now
+
+cluster initialize -> sudo kubeadm init ( this will initialise the cluster ) if we have more than one ethernet then we have to choose which IP should be attached for advertise
+
+sudo kubeadm init --apiserver-advertise-address 192.168.2.1 --pod-network-cidr=172.16.0.0/16  (if we have multiple ether device)
+
+This kubeadm will advitise the address for cluster communitcation and will download all the docker images that needed for master node( all control related pods are created using this img)and create all the pods that need for controlling the workernodes . and also it will used to join the workernodes to master node . 
+kuberetes cluster workes in 6443
+
+pod-network-cidr ( this is for mentioning that all the nodes that created inside the cluster should be in this range of IP range)
+
+Now master node is ready 
+
+To start using your cluster, you need to run the below commands ( this will be shown once we initialise the cluster in master ) 
+
+NORMAL USER:
+   
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are in the root user . type the below one 
+
+export KUBERCONFIG=/etc/kubernetes/admin.conf
+
+Now everything is completed in master node . 
+
+kubectl get nodes --> will list the nodes along with master. 
+
+Now we should deploy a pod network to the cluster. Then only workernode pod wil be connected with each other. 
+
+kubectl apply -f [pod-network].yml     ---- to get the  yml file we have to choose the network and get the yml file from the site.You can see theinstruction once cluster initiated in the master node which will have all these instruction to move forward.  (use flannel it will support overlay ingress)
+
+There also different pod-network available like, calico , canal( combination of flannel and calico)
+
+Then we can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.2.11:6443 ---token  jasdhfihaudfh/
+
+now go and run thesse command in the worker node to add them to master. 
+
+kubectl get nodes --> now it will show the workernodes that added to master.
+
+kubectl will command will work only in master node, workernode is used only for task purposes. 
+
+kubectl describe node docker-worker1(nodename)   -- it willshow the events like any prob with node and whatprob
+
+kubectl execution resource resourcename 
+kubectl explain   --> will explain the resources
+
+kubectl get svc  -->  svc is services 
+kubectl get pods --> will list the pods
+
+Now we going to deploy something using yaml file. copy the code from the site deployment . do some changes what you needed in the yaml 
+
+Deployment will keep track the pods, and self heal if any pods down it will automatically create another one,  what ever you given in deployment yaml file  it will try to keep that state.
+
+IF we have to remove one pod , but if we delete the pod means it will create another one, so to do this we have to change the deployment yaml file replicas from 2 to 1 , and apply so that one pod will be removed. only by this way we can remove otherwise it will add automatically.
+
+OR we can also directly edit the deployment and change the value, so that it will change immedietly without apply   kubectl edit deploy deploymentname
+
+save the code in the file and save it locally and apply the yaml using kubectl command
+
+kubectl apply -f nginix-basic.yaml . It will deploy   now we can check kubectl get deploy 
+kubectl get pods --> it will show how manny pods running ( from the script we ran 2 pods , so it will show 2 pods)
+pods is nothing but collection of container
+If we delete one pod , it will recreate another pods as soon its deleted. 
+kubectl delete pod podname ( kubectl action resource resourcename)
+
+so if we have to delete the pods , we have two ways. one is we have to delete the deployment or we have to change the configuration yaml setting that used for our deployment
+
+like setting the replicas to 0 . and apply the command again kubectl apply -f nginix-basic.yaml  This will help us to reconfigure them and remove as per in the configurations. 
+
+TO check the deply  - kubectl get deploy ( it will show the total replicas that configured for specific deploy)
+There is also another way to edit the depolyment . the first one we used to edit the yaml file and deploy them again. now we going to edit the deployment directly 
+
+kubectl edit deployment deployment-ngnix(deploymentname)
+
+once we edit the deployment directly with option replica =1  . then we no need to execute apply command again like we did in yaml
+because we directly edited in the deployment so it will reflect without any intervetion 
+
+For example if accidently the yaml file is deleted, then we can edit the deplyment and copy the code and create the yaml file in that. remove the unwanted things in the deployment code.
+and also another way to get the code . kubectl get deply deployname -o yaml   --> now we gt the code n yaml  we can delete the unwanted lines like stauts and other things and save it as yaml and then we can ren run the yaml to deploy the same.
+
+IN this they have one mongo.yaml and knote.yaml check whether we can get the file from the selvait tech
+
+mongo yaml will deploy the mongo db server and knote wil deploy the knote application . so we have to deploy these two file so we will get two pods
+
+kubectl get pods -o wide  --> this will show which pod is running in which node. and the ip of the node. 
+now edit the knote.yaml file and change the service type to loadbalancer and save it  and again redeploy the yaml 
+Now we will get the loadbalancer url to access the site from external
+
+We can also deploy things without yaml file ,but that is not the good practise to do that.
+
+kubectl run httpddeploy --image=httpd --replicas=1 --port=80
+
+pods will have single IP , that will be shared by container inside that . so container will use the pod ips with different port 
+
+so container to container communication will be default because both container is using same ip (pod ip) so no need extra setting for their communications
+
+pod to pod communitcation withing single node will be default,because that shares same IP (host ip)
+
+pod to pod communication within the node is called intra node communication, pod that connection to other node pod is called as inter node pod communication
+
+Kubernetes networking types.
+
+container to container communication  - since all the container sharing the same pod IP it will communicate with each other default. 
+pod-pod communication   (1 intra-node pod network communication 2) inter-node pod network communication
+intra-node pod communication : Pod -pod commnunication within same node is called intranode communication. This communication will be default because these pods shares same IPs of node(docker virutal network that created in workernode) . so due to same node this pod to pod communication will be default.
+
+Inter-node pod communication :  this is also pod to pod communtion but with different node. This communication will be happen through the network pod that we installed initially (flannel,etc) so this helps to communication between two different node pods.
+
+SERVICE : service is a resource type  this type will define us whether you going to communicate within the cluster or from outside the cluster.  There are two types
+
+pod to service communiction  --  This is used for internal communication, so that no outside contact will happen. Like DB server we use this type of communication
+external to service communication -- this is used for access the container from outside . there are fourr types
+
+* cluster IP  - communicating withing the cluster, so that we cant access from outside the network. 
+* Node port   - communicating the pods using ip with port number (node port number) which we usually do. WE can also create a loadbalancer and add all the Ips manually like that. 
+* Load balancer - communicating the pod from outsidde the networrk using ELB.  same as node port , but node port use IP address in this ccasea we using load balancer which will collect all the IP and add it to its table. so no manual inteervation needed for adding IP to this ELB.
+* extername  -> commucating between two difference kubernetes master node cluster
+
+SErvice --> is nothing but it is one kind of resource which is used to communitcation , all the above networking type will use SERVICE to connect with each other.
+
+kubectl get svc  -> in this we can get which type of networking the deploynode has
+
+In this we changing the yaml script like changing the service from node port to load balancer. once its done  do kubectl apply -f filename and now we will have loadbalancer for the knote app   - kubectl get svc will show the output
+
+inside single cluster(node) we can create multiple virutal cluster(namespace). TO isolate each enivironment we creating the namespace. we using this for isolate each environment.
+
+By default we will have three name spaces   default, kube-system, kube-public. all these are virutal cluster. inside these we can run many pods and many services inside each virutual cluster'
+kube-system : kubernetes system related resources are placed in this  (like, dns , proxy)
+kube-public :  no pods are running in this.
+
+
+For eg, we can create three vritual cluster for different environment like dev, test, prod.  Now we have bus app application 1.0 which has been deployed in all three environment. Now we have new update 2.0 . so we can push this to dev alone and do the testing and then finaly we can push that to prod once all the testing is completed. So in this prod will not be affected since we have clustering for testing (we creating mulitple namespace for multiple environment)
+
+let see whate the default namespace available in the node .
+
+Kubectl get ns  -> will show the above three list which i mentioned above and also kube-node-lease( new one)
+
+IN yaml file if we ddint mention any namespace it will be automatically go for default namesapce.
+
+if we run kubectl get pods -> it will show only the pods thats are available in the default namespace
+
+kubectl -n kube-system get pods --> to get the pod list that are avaiable in the kube-system name space.
+
+kubectl get svc  -> this will show the service that in default namespace
+kubectl get svc -n development   --> this will show the service that in devlopment namespace.
+kubectl get svc -A -->  will show all the service in all namespacce
+
+
+Now we going to create a two namespace for development and for qa . create a pod for both environment using bus app image 1.0 . once its created . for creating namespace also we have yyaml file. so first we have to execute that and then we have to deploy the application(bus app).
+
+now we going to update the busapp with 2.0 in the development environment alone.  so that qa wont be affect.
+Make changes in yamlfile and apply for development. Now old version will be deleted once the update version container is created. 
+
+kubectl descripe pod podname -n devlopment  -> this will show which version is used on the container (like 2.0 busapp)
+ once testing completed we can also update the other namspace.
+ 
+ Kubernetes secrets: it is also one kind of resource
+ 
+ all type of credentials and sensitive information can be used using this resource
+for example : while creating image we will have some password like information or any other sensitive inforamtion inside it.   so if we need to change the password again ,then we have to update the docker file and again we hvae to build it . In this case we can call this secrets directly , so if we have to change then we can change in the secrets so no need to rebuild the image again.
+
+Secret has many types, In this we going to use opaque, where we can mention user defined data lik mysql_password = oijdhfado  .like this. But we have to encrypt the password in base64 and than have to mention here.  
+
+no need to save our sensitive information in the image 
+
+create a seprate file for the secret . and store the data in that like msql_password = asedohfaosdfjhef77 ( the password must be in base64 encrypted format ) to make the password like that we have to do echo -n "password" | base 64  we will get the base64 format
+
+once done try to apply the secret yaml file . 
+kubectl get secret  it will show how many secret created
+
+to check how many keys and date in that secret, we can use descript option
+
+kubectl descript secret secretname  ( it will show what are the keys we are stored, but it will not show the password )
+
+
+to show the password in the secret file , we can use below command
+
+kubectl describe secret secretname -o jsonpath='{.data.Mysql_user}'   ( in this all the password as under data so we are using .data and mysql_user is a key , since we need the password for mysql_user we entering that 
+
+Now it will show the password but it will be in encrypted form we have to decrypt for that we have to add extra option
+
+kubectl describe secret secretname -o '{.data.mysql_user}' | base64 --decode   now it wil show the plain text password
+
+now we going to create a mysql , edit the mysql yaml file in that we have to call the secret keys for creating the mysql
+so after the container part we have to call the secret via environment variable like below
+
+env:
+  -name : mysql_password
+   valuefrom:
+     secretkeyref:
+	   name: mysql-cred ( secretname)
+	   key : mysql_password
+	   
+In this we calling the specific value , if we need all the keys inside the secret then we have to go for below 
+
+envfrom:
+   secretkeyref:
+     name : mysql-cred (secret name)
+	 
+once edited the yaml file then deploy it , once deployed access the container and then try to login the mysql by calling the variable
+mysql -u user -p $mysql_password -e 'show databases;'  it will list the databbases
+
+Volumes :
+
+ we can also call the secrets by mounting them as volumes
+ 
+ volumeMounts:                             --secondly we are mounting them with the name newsecret
+   -name : newsecret
+    mountpath" /etc/newsecret"
+	readonly = true
+		
+volumes:                                      --- first we creating a volume name as newsecret and calling the secretfile
+   -name : newsecret
+    secret:
+	  secretname: mysql_cred 
+	  
+so we can call the secret by using environment variable and also mounting them we can get the password.  once mounted try to df -h we can see the mount point and the keys
+
+
+Kubernetes configmap: it is also a resources (like secret )
+configmap is also considered as environmental variable but configmap does not provide encryption, if we want encryption then we can go for secret
+
+if we have to do something realted to configs then we can use the configmap 
+
+kubectl get configmap   we can get the configmap list
+ to create a configmap , we have to create a file  mysql-extra.conif and enter some data like  
+ [mysqld]
+ max_allowed_packet = 64M
+ 
+ So once file created we have to convert this to configmap 
+ 
+ kubectl create configmap mysql-extra  --from-file=mysql-extra.conf  now it will add in the configmap
+ kubectl get configmap   we can see that list (note we can also type cm instead of configmap) 
+ kubectl describe cm mysql-extra  -- we can see the content 
+ 
+ Now how to use the configmap:
+ same like sceret , we can call the env by mounting voulemes and also calling its variable like secret.
+ 
+ kubernets volumes : its also resource
+ types :
+ local node type - emptydir,hostpath,local
+ file sharing type - nfs
+ storage type - fc, iscsi
+ special purpose type - secret, git repo
+ cloud provider type - vpshere, cinder, aws ebs, azure disk
+ distributed file system types - glusterfs , cephfs
+ special type - persistant volume, presistent volume chain
+
+
+Local node : using hostpath type we can mount the volumes to container that present in our host(worker node)
+
+In case if the pods deployed in two differnet node means than we cant mount the single folder for the both pods, in that case we have to use nfs and mount the shared path for both the worker node and then we can share them to container .
+
+
+Presistant volume and persistant volume claim :
+
+whatever storage we have , first we have to convert them to PV then pvc and mount it in the pod or container.
+these storage willbe stored in the kubernetes cluster. 
+
+PVC  -> where we can request how much volume we need via yaml file and apply it , so it will get it from the pv. once its done we have the pvc . now we can use this pvc to any pod .
+
+Presistant volume : This is different from local node type , in local node type we will directly apply the shared volume in node and then that will be shared in the container. But in this all the volume will be store in the kubernetes cluster and that will be directly shared to all the container. Which will be easily scalabe like EFS.  
+
+Using pvc --> persistant volume claim we can get the volume for the container . we can claim how much space needed for the container while deploying the pod.
+
+In the first case we have to create a PV and then we can claim the space to container
+
+
+So now we have NFS share , we have to create pv for this and going to mount in the container
+
+PV is also a kind of resource, so we have to create a yaml file for this resource. and note that we cant change the yaml and recreate this again and again. it should be created on time so be careful while creating this.
+
+Persistant reclaim policy : 	one container released the space and if another container try to claim the space means , what should be done for old data that present in that space. whether it should be removed or what ever we can give in this
+
+pesistant relclaim policy : recyle ( in this we have used reclyle)
+
+retain - retain the data
+reclyle - data will be removed
+
+Once we applied the PV yaml file , now it will be listed in kubectl get pv 
+Once pv completed then we have to create a yaml file for PVC ( claiming the volume from pv and create as pvc) .. these things are live LVM concept. apply the pvc yaml and list them by kubectl get pvc .
+Now apply the pvc to the pod, 
+eg, if we delte the pod accidently,  the deploy will create another pod, which will automatically mount the pvc . where our previous data will also bbe present. \\\
+
+kubernetes performance monitoring:
+*************************************
+
+Using metrics collector we can monitor the performance of pod and container  ---metric server
+
+there is a yaml file for installing metric server. go and check the internet and get the yaml and apply it on the masternode
+
+once installed we can get the performace information via top commnad . we can also use this on the node wise
+
+kubectl get node. -->  kubectl top node nodename   --> we can see the ussage of that node , cpu memory
+kubectl describe node nodename  -> we can see more information about cpu and memory , how much its alocated and other indepth details we can get it by describe command. and also we can see the cpu and memory usage for all the  namespace .
+
+WE can alos get it by pod name -- kubbectl top -n develop pod podname ( in this it will show how much its using but not in percentage)
+so we can get this specific pod usage via node information  --> kubectl describe node nodename ( we have to mention the nodenname where this pod is alocated)
+so in this output we can get how much usage this pood is consuming with the percentage. 
+
+we can reserver the cpu and memory for each pod, so that this can avoid over consumming utilization for single pod. 
+For eg, in worker node we have 5 pod, if we didnt reserver any allocation for pod it is capable for consuming all the resources without any limit, so if one pod is consuming all the resources means other wont get the resources, So we have to reserver the resources for each pod, so that each pod will have permanently some resoucres which cant be share by other pods. if the reserved resources utilized menas it can get additionalyy, that also we have to set like max it should get this much only for additional resource . so it will not go beyond that. 
+
+Resource allocation :
+
+cpu request --> reserved  (min how much it should have)    cpu limit --> max how much it can be used.   these two values we can set for pods   
+while depolying the pod we can set these values under the container  .eg bellow
+
+resources:
+requests:                    ----min
+  cpu:50m
+  memory:512Mi
+limits:                         ---max
+  cpu:100m
+  memory:1024Mi
+
+if we not mentioning any value in this then it will considered as unlimited (0)
+
+IN worker node describe ( it will show how much resources the pods are resesrver for mix and max )
+using top command we can get the usage output , but describe we can get only how much allocation is set for the pod or node
+
+INGRESS :
+
+the outside traffice will be able to communicate the application by only using ingress controller ( using ingress rule we can set the Information how to access the application)
+before we used to have loadbalancer for each deploy, insted of this we can have cluster IP for each deploy and these cluster Ip WILL be pointed to ingress controler. so using single inigress controler we can avoid using many loadbalancer
+So first our traffic will reach the ingress controller . after that based of the url it will forward the traffic to specific pod ( this will be  mentioned in ingress rule)
+here ingress controller is also a resource type , in this we have to mention the service,. so we mentioning loadbalncer for this ingress controller.   so only one loadbalancer is used for this. and also we have to set the A record for all the URL to ingress controller IP, so whatever url we reaching it will go to ingress controller first and then it will reach to the specifc pod. 
+
+uusing ingress rule, we mentioning which url should go to which service ( we are seprating it via service name) this url should go to this service name like that
+
+using this ingress rule, we can manage the mulitple domain url . 
+
+now we have to setup ingress controller ( there are many project support this controller like , nginix, HAProxy like that)
+We are going to use the nginix now for ingress controller
+
+for installing nginix controller we have git repo , clone to our node and go the folder --> provider--> aws --> in that we have deploy.yaml   so apply that
+this is also like pods we have contanier in that 
+now we have a separate namespace for ingress-nginix
+so get into the namespace, there will be a pod ngnix controller  this is main one which controll.
+using svc command we can get the Loadbalancer endpoint for this nginx controller, and in the DNS we have to set this endpoint. like google.com-->endpoing  so if we type google.com it will point to that endpoint (that is it will reach the ingress controller) so using the ingress rule it wil check the URL and redirect to the specific pod.
+
+before all this change all your pods to clusterIP service
+now we have to set the ingress rule . kubetcl get ing
+
+in the ingress rule we can mention like below. Ingress rule is also a resource
+
+rules :
+ -host : knote1.learnitguide.com
+  http:
+   paths :
+    -path: /
+     backend: 
+       servicename: knote1
+       service port : 80
+
+ -host : knote2.learnitguide.com
+  http:
+   paths :
+    -path: /
+     backend: 
+       servicename: knote2
+       service port : 80
+
+so if we are reaching out to knote1.learnitguide.com (already we saved in dns that knote1.learnitguide.com-> ingresscontroller ip or enpoint) so it will reach the ingress endpoint . now ingress endpoint check the ingress rule, and it will point the request to knote1(servicename) clusterIP .  so now the request  will reach to the specific pod.
+
+kubetctl get ing, it will list the how many ingress rule we have and in that how many doamins we specified.
+
+
+How to applys ssl certficate for ingress --> so that our site will have https
+
+we can have the ssl certificate in secrets and we can all the secrets in the ingress rule
+
+go to ingress rule yaml file and define the certificate by calling the secrets
+
+spec: 
+  tls:
+   -hosts:
+      knote1.learnitguide.com
+      knote2.learnitguide.com
+    secretname : my-secret               ---- where we already created my-secret which has certification 
+
+
+
+now we can see how we deployed the certificate in the secret ..   we can also get the certificate by openssl or we can buy it from the third party
+once we created the certificate file by openssl command, we get two file .key and .crt
+now inside the secret yaml file we have to paste the content that insdie the both keys like below
+
+------
+-----
+---- -
+ metadata:
+   name: my-secret
+type: opaque 
+data:
+ tls.crt : in this we have to paste the iformation that present in the .crt file
+ tls.key : in this we have to paste the information that present in the .key file
+
+now we have to apply the mysecret(which has certificate) and then we can call this secret in the ingress rule which is mentioned above. 
+
+KUbernetes dashboard :
+
+we can get the yaml file in the internet for creating dashboard. so once we deployed that we have seprate name space for this dashboard
+get into that namespace and list pod, we can see the the pods that used for running the dasboard . and also we can check the service by kubectl get svc -n namespace
+in this we can see the kubnertes dasboard is created with the cluster IP so we cant access tthat from outside, so change that to loadbalancer by editing the yaml file . so we can get the link to access the dasboard ffrom outside the network.
+
+Whatever we done through cli that can be done via dashborad wichi is more easy and user friendly.
+
+#################################################################
+HA PROXY INGRESS controller:same as nginx ingress controlle
+
+We have to get the git url from the internet for HA proxy ingress installation . clone the folders from git to our node and then get into the deploy folder and apply the yaml file -  haproxy-ingress.yaml
+
+Haproxy will be installed in dedicated Namespace
+now we will get the endponit link , from this we can access our applications
+ in this also we have to deploy ingress rule which we done before.
+
+##############################################################################
+
+Masternode components:
+
+etcd -->  its kind of keyvalue storage which used to store the kubernetes cluster data ( no of pods, and their states, namespace etc) all meta data will be stored in this etcd
+kube-api-server -> it will be the frontend of the cluster , which recieves all the request and intract with the cluster .
+kube-controller-manager --> which run the processes in the background.  process like if we says replica 2 and this service should be initiated and this port should be exxposed, these kind of activities will be managed by kube-controller ( which will intract with worker node and complete the task as which mentioned in yaml)
+
+cloud-controller-manager :  it is reponsible for managing the resources that based on the cloud(aws). like loadbalance, routes, these will be set up using this cloud-controller-mangaer
+namba infrastructure ah aws cloud la setup panradhuku this component will be used.
+
+kube-scheduler --> it will help us to schedule the pods with the requirements that we have , like which node is free for to create a pod ,  so with the help of our requirements it will schedule our pods with the respective nodes
+
+ 
+
+WOrker node components: 
+
+
+kubelet : To intract with masternnode, all related worker nodes functanality and its states will be shared to masternode via kublet.
+
+kube-proxy: This will handle netwwork realated activities. like exposes the services to outside the world. and it performes request  forwarding to the correct pods or container across the various isolated network . 
+
+
+whatever the command that we running will be forwared through via api 
+
+
+TO install and configure the eks cluster . using eksctl ... need to install eksctl first 
+create a yaml file stating which region the cluster should be placed and how many workernodes needed and all things
+
+eksctl create cluster -f filename.yaml
+
+using cloud formation it will create the eks cluster in the aws. 
+
+
+
+
+
+##################################################################################
+We can install kubernetes cluster using below methods
+
+minikube  - used for single node cluster
+kubeadm   - used for multi node cluster
+helm
+
+kublet- kubeadm-kubectl ---1.20
+kubernetes-xenial packages used for kubernetes cluster.   --- to all node
+
+Config map:
+
+Collect the information that user required and create a config map.
+We can use the config map data as a environmental variable inside the kubernetes pods.
+COnfig map is solving the porblem of storing the information that can be used yby your application later point of time (like DB port, DB  connection)
+
+Secrets :
+
+this is same as config map, but  this will store the sensitive informationn (like DB username, DB password). Non-senstive datas can be stored in config map and sensitive datas can be stored in secrets.
+Before the object saved in etcd (the secrets will be stored in etcd via API call ) kubernetes will encryppt this one and save that in etcd, or also it will allow for custom encrytpion.
+But what if the hacker try to access the secret key directly instead of going into etcd . For eg : kubectl descript secretes .  In that case we have to give least permisson to that secrets files.  (USING RBAC )
+
+
+Practical :
+
+Creating a Config map (cm)
+create a config map and store in .yam file (  inside the file we mentioning DB port=3306 and also we can also add extra values also)
+ONce created apply it  kubectl apply -f config.yml (inside the config.yml  it has namedas test-cm)  like deployment name. We can save like this datas and call via environment variable inside the pods
+
+Now create a deployment file with creating 2 pods . once done get into one pod and check "env|grep db" so we dont have any environment variable inside the pod as DB
+Now lets configure our config map to that deployment file and check it .  We going to take a specifc value from the config map
+
+Go to deployment file --> below the containere image field add the below entry
+
+env :      --> it meenas we going to take the value from config map and save it as env variable
+-name: DB-PORT-ENV   ---- this will be the env varaible name that going to be present inside the pod.
+ ValueFrom:
+  configMapKeyRef:
+   name: test-cm    ----- this is the config map name that we created
+   key: db-port     --- this is the value already created in config map that we going to map with  DB-PORT-ENV ( taking this specific value from configmap )
+
+
+Once we edited the deployment file  then apply it . now go inside the pod and check "env |grep db" it will show the value as below
+
+DB-PORT-ENV=3306
+
+In config map we given the value as  db-port=3306
+
+Now if we have to change the value for db-port=3307, then we can go and edit the config map , but that willl not going to apply in pods, to apply in pods again we have to deploy it. so if we going to use the dyanamic value(the vallues that will be change in future ), instead of calling the env variable one by one we can directly mount the file(configmap file) to the container. so all the datas inside the configmap will be mounted to the pod and user can get the values from the file by calling them .
+
+
+To mount the config map volume below the container image, first we have to create the volume.  So first create volume and then mount it 
+
+Below the container block create a block name volumes  and then mount that below container image. The code will be as below
+
+spec:
+  containers:                                --block
+  -name: python-app
+   image: python-sample-app-demo:vi
+   volumeMounts:
+   -name: db-connection                    ---volumename that we mounted below
+    mountPath: /opt
+   ports:
+   -containerPort:8000
+  Volumes:                                 --block
+   -name: db-connection                    --volumename
+    configMap:
+     name: test-cm                         --configmapname   ( created the volume)
+
+
+Now make soome changes in config map like changing the port and apply it , it will be automatically reflect in the pod without restarting the pod. 
+
+cat /opt/db-port   we will get the value 3309  which is changed latest  (dp-port is key , 3309 is value)
+
+NOW LetS GO WITH SECRET
+
+secret and configs are same , but little differnt lets check 
+
+kubectl create secret generic test-secret   -----------> here genric menas we going to save the key-value concepts so we using genric
+
+IF we have to call the secret as certificate then we can call as below
+
+kubectl create secreet tls test-secret  --- this can be used as certificate  .
+
+Now lets go with generic , once secret is created apply the secret --- kubectl apply -f secret.yml
+
+Same as config we can access the secret via deplymt file
+
+##################################################################################################################################
+
+Nodeselector , lables:
+
+we can label our each node (like giving name and calling inside the yml file) for exapmple we labeling a workernode 1 
+
+kubectl get nodes --show-labels
+kubectl lable nodes nodename disktype=ssd
+
+So now if we have to place a pod in specific node workernode1 , then we can mention in the pod yaml file so that pod will be created in that node , enter the below line in pod yml file
+
+nodeselector:
+ disktype: ssd
+
+so that pod will be place in workernode 1 
+
+If in single lable we have 4 workernodes means, it will select any one workernode and place the pod.
+
+
+Lables :
+
+Its like a tag that we giving to the resources .
+For eg : we creating a 2 pod with lables app=test and 1 pod with lable app=prod .  in the service type we have to mention that for which pods this service should apply. In that time we have to choose the label app=test . So the service will be apply only on that 2 pods, not on the other onepod because the labeel is different
+
+In service.yml file we have selector( in this we have to mention the label) . so whatever the pods that having the label will be attached to that service.
+
+###################################################################################################################################
+
+Liveness (running status): when is a pod healthy  that is a liveness check. only the liveness check is passed kubnertes will connsider the pod is healthy. If the pod is not healthy the kubnertes will restart the pod untill it makes healthy. 
+
+
+
+
+
+
+Rediness : when the pod is ready to receive the traffice (from service). If the pod is not ready then traffic will not flow to that pod (service will not send traffic to that pod). We can customize the readiness check inside the pod.yml ( like if the pod has some files in the directory then only it will be marked as rediness  like  this we making the desecission in the yaml file ) So once the pod created, kubernetes will check whether the files are present, if the files are present then it will consider as ready state. other wise it will not consider as ready state and it will not route the traffic .
+
+In real time senario . once the pod is created it has to get somedatas(frm somewhere) to make the site ready, so assume it will take some time to get the datas into the pod, so untill all the datas transfered the pod will not go to ready state. so if the condition that we specfied in the yml file is matched then it will go to ready state. 
+
+
+Same like liviness,  we have to mention some condition. if the condition meets then the kubernetes will consider the pod is running state, otherwise it will start restarting the pod to get it healthy status.
+
+
+
+
+#############################################################################################################################
+
+kubetctl rollout history deployment/deployment-name   --- This will show all the version of the deployment that we made in that specific deployment (list out the changes we made)
+
+to check the specific rollout deployment --  kubectl rollout history deployment/deployment-name --revision=2   (  the history will show in numbers, chosse the number that you need to check)
+
+To rollback to the previous version we can use the below command
+
+kubectl rollout undo deployment/deployment-name
+kubectl rollout undo deployment/depoloyment-name --to-revision=2    -- rollback to specific version
+
+#############################################################################################################33333
+Blue-gree deployment 
+
+need to change  normal manifest file to work with blue-gree deplyment startergy  .
+
+change the api version and Kind - rollout , lets take an image as 1.0 , and have to mention satergy as bluegreen like below
+
+stratergy:
+  bluegreen:
+    activeService:realtimeapp-activee
+    previewService:realtimeapp-preivew
+    autoPromotionEnabled:false
+
+In manifest file you will have already a service, so copy the same service and just rename it to realtimeapp-preview , and rename the original into realtimeapp-active .
+
+So now the above bluegree has pointed to two services . Make sure yyour ingress is pointed to realtimeapp-active always. 
+
+Now we going to make changes in image as 2.0 and apply it . Now its going to create again a new environment insetead of replacing the old one.  now we have two environment one is active one (old) and other one is preview one ( newly updated image) , now we going to promote our service to point to our newly updated image pods . we can promote by below command
+
+option: install argorolloutplugin, to see the realtime update while the bluegree deplolyemt is happening
+
+kubetctl argo rollouts promote realtimeapp(deployname)   --- this wil point the service from old one to new one 
+
+while this happening we can see the old pods will be terminated automatically 
+
+
+Check node affintiy 
+
+#############################################################################################################################
+taint and tollerance does not tell the pod to be placed on the particular node. instead it only tells to the node only accepts the pod with certain tolleration.
+
+we can taint a particuular node withe keyvalue, and in the pod we have to mention with tollerance with particular key value that we mentioned on that node. 
+so that only that pod is allowd to be placed in that particular node , not the other pods because in other pods we do not mention the tollerance with  keyvalue.
+Note : in this we just said to the node that alow the pods which has the tollernce. its doesnt mean that the pod is going to  be placed only on that node , because it can be placed any node but it has access to be placed on the tained node as well.
+
+For example, we can see that no deployment will be placed on the masternode why? , because while creating the masternode kubernetes itself taint the master node to restrict the pod placement. 
+
+3 types of effects we can have in the taint concept :  the below three can be mentioned in tainteffect
+
+NOschedule --> no pods will be scheduled in that tainted node untill it has tolernace key value 
+prefernoschedule --> It will try to deny the pods to be placed on the worknode but that is not guraneteeed
+NOexecute --> for eg, we have few pods in the workernode3, if we taint the workernode3 with noexecute , then it will remove all the pods inside that node and it only keep the node which has tolarence value ( if any pods havea the tolerance value it will not removee that from worrkernode3)
+
+
+to taint the node :
+
+kubectl taint nodes node-name key=value:taint-effect   ---> kubectl taint nodes workernode1 app=blue:Noschedule
+
+To apply the tolleraance in the pod:
+
+Below the containers mention the below line
+
+tolerations:
+ -key:"app"
+  operator:"Equal"
+  value:"Blue"
+  effect:"NoSchedule"
+
+Just mentioned this in the pod, so that it will be placed on the paticular node which is tainted with the key value that metnioned here
+
+#############################################################################################################################
+
+
+statefull vs stateless architecture :
+****************************************
+
+Statefull architecture :  All the state of the user will be stored in particular webserver where the user first hit the server. the user state will be stored in that server.
+For eg :  User trying to login to the flipcart and checkout some products (these api calls are made thhrough webserver1) so suddenly webserver1 crashed . usually loadbalncer will point out the traffic to webserver2 but in this case all the "user state" will be stored in the webserver1 not in the webserver2 , so when the websesrr1 down the traffic flows through webserver2 the user needs to do select the products and add to the cart again for the checkouts since the user state is not available in the webserver2
+
+Statless architecture : In this it will not store the state of the user and user data to any of the webserver , instead of the it will stored in shared storage or shared location or cached. so if one server the crashed the other seerver can retrive the userdata or userstate from the shared location and process the task.
+
+
+So mostly the microservices will be deployed in stalteless architecture because it will scale up and scale down according to the load using autoscaling . 
+
+######################################################################################################################################
+RBAC - Role based access control     in kubernetes
+
+its nothing but just we giving access to the particular resources to the particular group or user or service accounts.
+
+role ->  it can be assigned for particular users. By giving access to particular namspaces and acttions like (creating , listing, deleteing )like that. The actions will be metiond in verbs . This type is for particular namespaces
+
+cluster role --> same as above , but this role is for whole kubernetes cluster , not for single workspace like that
+
+
+Above two role can be assigned to users , groups, service accounts
+
+##################################################################################################################### 
+
+statefull set in kubernetes:
+
+satefull set is used for statefull applications like db mysql monqo sql
+
+statefull set  maintain a sticky identity of each of their pods which helps to create master slave concepts in DB side. 
+
+For eg : we have masterdb named as mysql-01 and slave named as slave01 and slave02
+so if master pod failed and it will recreate the pod, while recreating it will stick to the same identity name which it as previously. so that connection between master and slave will not be disconneceted.
+
+statefull set will create all the pod with stick identiy. but in depolyment it will choose random name for each pod.
+each pod it will have a dnsname because if the pod is recreated the ip address will be changed , but dns name will not be changed on that pod. so using dns name only the other nodes will be communicate with each other(like salaves)
+
+#################################################################################################################################
+
+
+EKS CLUSTER CREATION:
+
+kubectl version --short --client
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.20.15/2022-10-31/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+kubectl version --short --client
+
+
+DOC - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+EKSCTL DOC - https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+AWS CLI - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+~/.aws/config
+
+AKIAVKPNM65QSRRNC3TY
+KXXurE8cMfzoTB/2I6pyT1zikNiWTAYuRBRLMvtT
+
+
+kubernetes version 1.25
+
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: EKS-cluster
+  region: ap-south-1
+
+nodeGroups:
+  - name: ng-1
+    instanceType: t2.micro
+    desiredCapacity: 2
+    ssh:
+      allow: true # will use ~/.ssh/id_rsa.pub as the default ssh key
+  - name: ng-2
+    instanceType: t2.micro
+    desiredCapacity: 2
+    ssh:
+      publicKeyPath: ~/.ssh/id_rsa.pub
+
+DOC - node group edit  -  https://docs.aws.amazon.com/eks/latest/userguide/migrate-stack.html
+
+https://eksctl.io/usage/managing-nodegroups/   --- to edit the desired states
+
+
+
+
+
+############################################################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.15.4
+        ports:
+        - containerPort: 80
+
+#############################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-load-balancer-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+
+##############################################################################################################
+
+
+ ARGO CD Installation  -- https://blog.devgenius.io/how-to-deploy-argocd-in-eks-cluster-for-continuous-deployment-6ebbb3009024
+
+
+
+
+
+
+

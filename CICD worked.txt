@@ -1,0 +1,18 @@
+created jenkis docker instance and launched jenkins and git
+created sonarque docker container in the same instences 
+created a token --- my account -> security-> generate token
+configure that token in the jenkins.
+Install docker pipeline and sonarqube scanner in jenkins   
+Give permission to docker.sock chmod 666 docker.sock   --- /var/run/docker.sock
+enter docker credentials and github credential into jenkins
+
+
+
+
+
+
+
+
+
+
+http://65.1.134.113:8080/
