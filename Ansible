@@ -1,0 +1,938 @@
+ANSIBLE
+
+What ever code that we creating should be sequential manner (like step by step , not mixed step)
+Ansible is used for  configuration management, provisioning, application deploying and orchestration
+Ansible is agentless, it uses openssh to connect with the servers
+Ansible is a push based mechanism
+Control node(wherever the ansible is installed ) is master and client nodes are client. master node connect with client nodes using password less authentication.
+
+Components:
+
+Inventory : All the client node details should be updated in the inventory (IPS) otherwise the master cannot connect with the clients.
+Playbooks : tasks that we going to execute on the client nodes 
+Modules: modules are used in playbooks, There are some default modules that comes while installing the ansible.
+
+Ansible cannot be installed in windows, but our client system can be in windows
+
+Create a vm in aws and and create ansible user and give sudo permission (best practice). To create a ssh key for password less authentication we have to login as ansible user and then create a key using ssh-keygen
+In AWs vm there is no password authentication is enabled default we use the pem file to enter into the vm , So we have to enable the password authentication first , so edit sshd_config and edit password authentication as yes
+
+INStALL Anisble :  Install python and python-pip first and then using pip we can install ansible. pip install ansible 
+ansible --version to check the version and other details of anisble and also check the config location is updated. 
+When we installed the ansible using pip command we will not get the config file. So we have to do this manually. defaultly it will be in (/etc/ansible)
+Create a ansible folder in /etc/ and download the config file from official website. ( if we install the ansible using package manager the config file will be present default)
+Create a file ansible.cfg and paste the config details that copied from the official website . 
+create a host file in the same ansible folder . host file is nothing but inventory file
+
+Client node :
+Create a ec2 instance , setup hostname , create ansible user and password( password must be same for all the server) , add user to sudo , enable password authentication ( for password login).
+
+Now we are going to connect the control node to manage node by copying the ssh key to the manage node 
+Go to control node and login as ansible user and  we already created the ssh key  before , so now we have to copy the key to the managed node 
+ssh-copy-id privateip (managed node ip)
+Now the ssh key has been copied to the managed node. Now try to ssh the managed node it will connect (ssh ip) .
+
+Ad-hoc commands -> used for single task for quick execution, and it cannot be re-useable.
+ansible  [pattern] -m [module] -a "[module options]"
+ping module:
+ansible all -m ping     here ping is module from ansible ( we have 100 ofs module from ansible default , if we want we can create one).  IN hostfile already we added the managed host Ip, so we get the ping response pong. 
+all --- it will execute the task in all the servers that list in the inventory(host)
+
+Command module : where we can execute all the unix command directly 
+ansible all -m command -a "uptime"    -a argument
+ansible all -m command -a "date"     we can execute any unix command
+
+stat module: stats of a file or folder we can use the path to check the stat
+ansible all -m stat -a "path=/etc/hosts"    -- this will show the stat of host file whether it exists or not and other details of that file. 
+
+Yum module :  used to install the packages
+ansible all -m yum -a "name=git" --> it will not install we need root permission in this case we can use "become" -b
+ansible all -m yum -a "name=git" -b   -> this will install the packages with root permission
+
+User module:  used to create the user
+ansible all -m user -a "name=john" -b   it will create a user in the managed host
+If we again execute this command it will show successful but it will be in green colour (because it is already existed and there is no change is needed)
+but when we created in the first place it will be in yellow colour because it is created newly and it is modfied that's y it is in yellow colour
+
+setup module : it will show all the information about the system , processor, cpu , memory, network, os information and all the other information about the system. in this we don't need any attribute to execute
+ansible all -m setup
+
+The default inventory file will be present in /etc/ansible/hosts. We can also define our own inventory file but when we run the ansible command we have to mention -i and the path of the file "ansible -i myfile" 
+Other way is we can mention the path in the config file "ansible.cnf" 
+
+WE can also create a group in the inventory file to separate the servers list  and we can call it while running the anisble ( have to use group name instead of all)   ansible groupname -m ping 
+
+Ansible cnf:
+In this conf we have "fork" option in that we can provide the number like 5 , so that the ansible can execute the task for first 5 servers and then only it will go for second 5. in the inventory if we have 10 servers means it will go 5 by 5 .
+
+ASK_PASS : this option is used whether we want to ask the password while login to the managed system . Default it will be false
+become : we can set true or false. default it wil be false. If we set true then all the commands will run as root. which is not good
+become_ask_pass : while tring to login as root do we need to ask password or not.  default it will be false
+
+Now we can create our own config file in our own path. Generally ansible will look for the config file in the below path sequencly
+ANSIBLE_CONIFG   the path that wen mentioned in the environment it will look for it
+ansible.cfg ( current directory) where the ansible commands run
+~/.ansible.cfg (in the home directory)  User home directory  . If john running this command it will check the /home/john/config file
+/etc/ansible/ansible.cfg   atlast only it will check this directory 
+
+For example we are in ansible user and in our directory I just created a ansible.cfg and edited become=true and then saved it . Now I run the ansible command using yum to install package , it is installed without -b . because it took the config from our home location.  anisble will check the config file in sequential oder , first which is coming it will take that. 
+
+ansible-doc -l   --> will show all the module that are in ansible
+
+Ansible playbook:
+
+Ansible written in yaml code and saved as .yml. The playbook starts with --- 
+Creating an user in the client machine using ansible playbook , usually we use  anisble all -m user -a name=john -b  to create an user .
+
+---
+- hosts: all
+  become: true
+  task
+  - user: name=john
+
+now save this file(user.yml) and run in ansible --  ansible-playbook user.yml   
+
+We have created other two ec2 instance and added to host list as group wise , app server , web server and db server .  Done all the pre-req in the other 2 newly created ec2 instance like enable password authentication and adding user to sudo for ansible user like etc.  now run the ping command for all the 3 server.
+
+now we doing the same for user.yml file which we created before . We just going to run for all the 3 ec2 servers
+for one server it will be in green , because its already created. but for other 2 it will be in yellow because it is created now
+If anything modified or created using playbook it will be shown as changed that means user is created 
+
+
+In the above user.yml file we dont give the name for task. to be good practice we have to provide the name for the task what that going to do exactly
+
+task
+- name: creating user
+  user: name=john      
+
+We can also modify as below , instead of giving the name john directly we can give as below
+
+task
+- name: creating user
+  user:
+    name: john
+
+Now we going to use yum and install the packages using ansible playbook
+
+---
+- name: install packages
+  hosts: webserver
+  become: true
+  tasks:
+  - name: install git
+    yum: 
+      name: git
+      state: installed   ---- in this we can give installed, present  both are same going to install the package. if we give update it will update the package
+
+now we can run this playbook using ansible-playbook install_package.yml  it will execute. If we diable become inside the code by commenting it out. it will not work but we can use -b while running this command ddirectly to work 
+
+Now we going to create a file using "file module" creating playbook for it
+
+---
+- name: creating file
+  host: all
+  become: true   --- become true means this will login as root user ( so the file will be created with permission root)
+  tasks:
+  - name: creating a file
+    file:
+      path: /home/ansible/test ( we have to mention the file name which we trying to create (test)) 
+      state: touch  ( for creating file we using touch and we have other parameter like directory please check in the ansible official site for options)
+
+To list all the ips that are in hosts / inventory we can use ansible all -i hosts --list-hosts  or ansible all --list-hosts
+
+in the above play  book test file created with root permission. if we dont want as root we have to comment it out the become , then it will create in ansible user
+so we commenting out the become and in "state" we giving directory . and run the ansible file again
+so this time the directory will be created but not with root permission it will be in ansible user permission.
+
+Now we going to use the copy module for copy the file from src to destination  copy_file.yml
+
+---
+- name: copying file
+  hosts: all
+  become: true    (for copying file we dont need root,but we need for changing the permission)
+  tasks:
+  - name: copying fie
+    copy:
+      src: /home/ansible/test
+      dest: /tmp/
+      mode: 0600
+      owner: john  (we can give john as owner of that file that we copied)
+
+ansible-playbook copy_file.yml --check    --- this will not do the task but it will check whther the playbook execute the task correctly or not
+ansible-playbook copy_file.yml --syntax-check --- this will check the code whether all the intentation is good and any error is there or not. 
+
+Now we going to install httpd in the client machine
+
+---
+- name: Httpd install
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: installed   ( for removing we can use removed)
+  - name: service start
+    service:
+       name: httpd
+       state: started    ( for stopping we can use stopped)
+
+this will install the httpd and start the service . IF we have to remove this httpd we have to first stop the service and then remove the httpd. so we have to start the task with service stopped and then remove the httpd 
+we using yum module for installing this in rhel and centos, for ubuntu we have to use apt module. check the apt module for ansible it will show the options in the internet
+Instead of installed we can use present also. If we didn't give anything in the state it will default take it as present. But when we check the ansible site installed option is not available in the "apt" module so better we can use present option for this . 
+
+NOTIFY and HANDLERS
+
+As for the above example we installed httpd and started the service using the playbook. So in this case we going to use the handlers to start the httpd service only if the httpd is installed otherwise handlers will not execute the service start below is the code. NOTE: Notify name and the task name for the service should be same.
+
+---
+- name: Install the httpd
+  hosts: all
+  become: true
+  tasks:
+  - name: install the httpd
+    yum:
+      name: httpd
+      state: installed
+    notify: start the service
+
+  handlers                     ----(this should be come under the same line task, not under the task)
+  - name: start the service     ----  both the notify and this name should be same , then only notify will call this task
+    service:
+      name: httpd
+      state: started
+
+
+If the task install the httpd execute only service task will start otherwise the notify will not call the handlers to start the service
+
+Gathering facts:
+
+Which is used to collect all the system information such as memory , network interfaces, ip address, and os details from the client machines before running the task . This information helps to make decisions and adjust the tasks dynamically based on the machine state.
+For example if we have to install the specific software only if the machine has atleast 8gb of ram . So in this gathering facts result will be used .
+
+---
+- name: check the server memory and install the software
+  hosts: all
+  tasks:
+  - name: Gather facts
+    ansible.builtin.setup:                          --- this will gather the facts like memory etc
+
+  - name: install the software if memory is greater than or equal to 8GB
+    ansible.builtin.yum:
+        name: software
+        sate: present
+    when: ansible_memtotal_mb >= 8192     (8GB)
+
+In this we dont use gathering facts , then give no to that (gather_fact: no ) in the header  , so that it will not take time for that  task. 
+
+
+We have rhel machine and ubuntu machine as our client machine as said before we have to use yum for rhel and apt for ubuntu . so for installing httpd/apache for this client machine we have to write two .yml sepretly. How can we handle this in single file using when conditions and gather_facts
+
+---
+- name: install httpd/apache
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: installed
+    when: anisble_os_family == "Redhat"     -- this wil be verified in the gathering fact results. gather fact result will have the os family output)
+  - name: start the httpd service
+    service:
+      name: httpd
+      state: started
+    when: anisble_os_family == "Redhat"
+
+  - name: install apache
+    apt:
+      name: apache2
+      state: present
+    when: anisble_os_family == "Debian" 
+
+  - name: start the apache service
+    service:
+      name: apache2
+      state: started
+    when: anisble_os_family == "Debian"
+
+NOTE: without gather facts enabled above code will not work because it cannot verify the when command with gatherfact.
+
+If we have to install multiple packages at a time then we can use list 
+
+---
+- name: install packages
+  hosts: webserver
+  become: true
+  tasks:
+  - name: install git
+    yum: 
+      name: [ 'git', 'make', 'wget', 'telnet']
+      state installed
+
+like this we can install multiple packages, we can also use with_items which is going to deprecated in latest version 
+
+Ansible varibles:  We can pass the ansible variables in different way
+define in the playbook , passing from external file, passing from host inventory, passing while running playbook, using group_vars or host_vars so on...
+
+---
+- name: create a user
+  hosts: all
+  become: true
+  vars:
+   user: srini
+  tasks:
+  - name: creating user srini
+    user:
+     name: "{{ user }}"   ( doube quotes is called because we calling the user in starting place, if we call the user after two words we wont need quotes)
+
+We can also call the var in the file , before that create user.yml and enter the below var
+
+user: srini
+
+---
+- name: create a user
+  hosts: all
+  become: true
+  vars_files:
+    - user.yml   ( we have to create this file manually to enter the user name )
+  tasks:
+  - name: creating user {{ user }}
+    user:
+     name: "{{ user }}"
+
+Now we going to pass the variable while running the ansible command ( note the variable that we passing through the command line is more piriority than other that we defining inside the code or other ways )
+Now with the same code we going to run the anisble command with different user . it will not take it from var file, it will take the user from command
+
+ansible-playbook create_user.yml -e "user=hema"   -- now user hema will be created  (-e is --extra-vars )
+
+Convert shell commands into ansible playbooks:
+
+We going to install tomcat using anible playbook and start the services by running ./startup.sh
+
+---
+- name: setup tomcat
+  hosts: all
+  become: true
+  tasks:
+  - name: install java
+    yum:
+      name: java
+      state: installed
+    when: anisble_os_family == "RedHat"
+
+  - name: install java on ubuntu
+    apt:
+     name: default-jdk
+     state: present
+    when: anisble_os_family == "Debian"
+  
+  - name: Download the package
+    get_url:
+      url: https:downloadlatesttomacturl/tar.gz
+      dest: /opt
+
+  - name: untar apache packages
+    unarchive:
+       src: /opt/tomcat.tar.gz
+       dest: /opt
+       remote_src: yes         --- this option is used to run the task on the remote system(client)
+
+  - name: add execution permission on startup.sh 
+    file:
+      path: /opt/tomact-8.5/bin/startup.sh
+      mode: 0777
+  
+  - name: start tomcat services
+    shell: nohub ./startup.sh                         --- nohub is used for running the script background without quiting
+    args:
+      chdir: /opt/apache-tomact-8.5/bin             --- change to the dir first and then execute the script.	
+
+
+USING TAGS in playbook:
+
+Tags is nothing but we giving tags for some task (like naming something for that task)  . so while running ansible command if we mention that  tag while running the ansible command it will execute only that task not others. only the task which has the tag will be executed . eg given below
+
+ 
+    
+---
+- name: install httpd/apache
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: installed
+    when: anisble_os_family == "Redhat"     -- this wil be verified in the gathering fact results. gather fact result will have the os family output)
+    tags: install_apache
+
+  - name: start the httpd service
+    service:
+      name: httpd
+      state: started
+    when: anisble_os_family == "Redhat"
+    tags: start_apache
+
+  - name: install apache
+    apt:
+      name: apache2
+      state: present
+    when: anisble_os_family == "Debian" 
+    tags: install_apache
+
+  - name: start the apache service
+    service:
+      name: apache2
+      state: started
+    when: anisble_os_family == "Debian"
+    tags: start_apache
+
+anisble-playbook install_appache_html.yml   --> which will run all the taks that are in playbook , but when we run the below command
+
+anisble-playbook install_appache_html.yml --tags "install_apache"  -- this will run only the task which has this tAGS,  not the other task will be executed.
+
+IGNORE ERRORS:
+In ansible , we are executing different task in sequential manner. so if any task gets failed then it will not be execute further task. so we can use "ignore_errors: yes" for the particular task , so that even if we get any error on that particular task anisble will proceed with the remaining task without quiting the job. 
+ignore_errors: yes   which can be put under any task eg below
+
+  - name: start the apache service
+    service:
+      name: apache2
+      state: started
+    when: anisble_os_family == "Debian"
+    ignore_erros: yes
+
+
+Ansible vault :
+
+ANsbile vault is a  feature of ansible that allows you to keep sensitive data, such as passwords or key in encrypted files. rather than as plaintext in playbook or roles. 
+
+* CREATE : used to create a ansible vault file in encrypted format  (this one is to create a file with encrypted format then we can enter the data)
+* view:  to view the data of encrypted file
+* edit : to edit the encrypted file .   we cannot use vi or cat to edit we can only use ansible vault command to do this
+* encrypt : used to encrypt the file, we have already have a file with password which is plain text, so if that need to be encrypted we can use this
+* decrypt: used to decrypt the file 
+
+We have to use the password to encrypt the file or while creating the file. so this password should be used while view or editing or while running the playbook
+ 
+--ask-vault-pass : we can use this option while running the playbook , then it will ask the password then we can type the password and execute the playbook
+ansible will not ask for the password automatically , we have to use this option to ask the password
+
+--vault-password-file: to pass the vault password through file 
+
+anisble-vault create vault-pass.yml  --> used to create a new encrypted file and save the sensitive data. while creating itself it will ask to set the password 
+ansible-vault view vault-pass.yml  --> it will ask the password, once you entered you can view the content insdie that file
+ansible-vault edit vault-pass.yml  --> same once you enter the password we can edit the file.  same follows for all the options that i mentioned above. 
+
+
+USING ANISBLE VAULT WITH GIT
+
+when we try to clone a repository from the git using git clone it will clone to our system , but when we try to clone the private repository we need password to clone the repo, we can pass the username and password in the url itself while clone so that it will not prompt for the username and password while cloning
+
+normal :   git clone https://github.com/yankils/vault.git
+using password and username:  git clone https://yankils:Ansible123@github.com/yankils/vault.git  (user - yankils pass- Ansible123)
+
+---
+- name: ansible playbook to test ansible vault
+  hosts: all
+  become: true
+  tasks:
+  - name: clone a repo
+    git:
+     repo: https://yankils:Ansible123@github.com/yankils/vault.git
+     dest: /opt/ansible/test-vault                     ---- we don't have folder test-vault under ansible, it will create the folder and clone the repo
+
+Now instead of passing the password directly on the playbook we going to use ansible-vault
+
+Create a ansbile-vault file (vault-pass.yml) with encypted and inside it enter this data  " password: Ansible123 " and save this. note we have a password for this file which should be entered while running the ansible playbook , otherwise this file cannot be able to read by anisble while running the task
+
+ the below code is written in ansible-vault.yml
+
+---
+- name: ansible playbook to test ansible vault
+  hosts: all
+  become: true
+  vars_files:
+    - vault-pass.yml
+
+  tasks:
+  - name: clone a repo
+    git:
+     repo: https://yankils:{{ password }}@github.com/yankils/vault.git
+     dest: /opt/ansible/test-vault
+
+ansible-playbook ansible-vault.yml --ask-vault-pass     -- we have to enter the password which we used to encrypt the file 
+if we enter without --ask-vault-pass, then ansible cannot access the vars file and it cannot clone the repo
+
+if you don't want to enter the password while running the playbook , we can store the password in a file and we can call that file while running the playbook. create a pass.yml file and enter that password and save it now run the below command
+
+ansible-playbook ansible-vault.yml --vault-password-file pass.yml
+
+ANSIBLE ROLES:
+
+ANsible roles is nothing but it is a pre-defined task, eg  above we created a task for installing apache we can create that as a role and that can be called in any other ansible playbook. 
+
+to create a role we have to use ansible-galaxy , ansible-galaxy init setup-apache  ---> this will create a empty structure or role inside tht we have to place the code accordingly
+
+Defaults, files, handlers, meta, README, tasks, template, test,vars  these folders will be created under the folder setup-apache
+
+Now we going to do a task like installing apache and changing the default port from 80 to 8081
+
+---
+- name: Install httpd
+  hosts: all
+  become: true
+  tasks:
+  - name: install httpd
+    yum:
+      name: httpd
+      state: started
+    when: ansible_os_family == "RedHat"
+    notify: start httpd
+  - name: apache2
+    apt:
+     name: apache2
+     state: present
+    when: ansible_os_family == "Debian"
+    notify: start apache2
+
+  - name: copy index.html
+    copy:
+      src: /opt/ansible/index.html
+      dest: /var/www/html
+      mode: 0666
+
+  - name: changing port for httpd from 80 to 8081
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^Listen'
+      insertafter: '^#Listen'
+      line: Listen 8081
+    when: ansible_os_family == "RedHat"
+    notify: restart httpd  
+
+  - name: changing port for apache from 80 to 8081
+    lineinfile:
+      path: /etc/apache2/port.conf
+      regexp: '^Listen'
+      insertafter: "^# /etc/apache2/sites-enabled/000-default.conf"
+      line: Listen 8081
+    when: ansible_os_family == "Debian"
+    notify: restart apache2
+
+  handlers:
+  - name: start httpd
+    service:
+       name: httpd
+       state: started
+
+  - name: start apache2
+    service:
+       name: apache2
+       state: started
+
+  - name: restart httpd
+    service:
+       name: httpd
+       state: restarted
+
+  - name: restart apache2
+    service:
+       name: apache2
+       state: restarted
+
+
+Now do this by yourself, assign vars in the code and put port: 8082 and call this as {{ port }} wherever necessary and execute it . 
+
+Now we going to create this complete task as role and call it in the ansible playbook. already we created setup-apache role (which is empty) now we going to move all the code into each section accordingly.
+
+Defaults  -- under this there will be main.yml inside this yml we can give default variables, if no variables assigned in vars it will take as default
+files --- place the index.html file inside this files folder so that ansible code can use this file to copy to dest. 
+handlers -- copy all the handlers section and paste it in the main.yml file inside the handler folder 
+meta -- not needed for now
+README -- not needed for now
+tasks  -- copy all the task and paste it in this main.yml file inside the tasks
+template -- no use for this now
+test  -- used for testing purpose, now no use for this
+vars  -- in this main.yml file type port: 8081 and save it. 
+
+now complete role is created in the folder now we going to call this in the ansible playbook to install the apache
+
+create install_httpd.yml file and paste the below line 
+
+---
+- name: Install httpd
+  hosts: all
+  become: true
+  roles:
+   - setup-apache     -- role name
+
+Now run this ansible play book , and it will call the role and apache and httpd will be installed.  just call the var "port" directly while running the playbook it will take the port which you mentioned while running the playbook and ignore the port value which is inside the var. 
+
+ALL THE ABOVE CODE IS CLONED IN MY GIT REPO NAMED "ANISBLE"
+
+
+
+############################################################################################################################
+
+Learn ansible advanced
+
+with items example:
+
+- name: install all required dependies
+  apt:
+   name: {{ item }}
+   state: installed
+   with_items:
+      - Python
+      - Git
+      - maven
+      - Jenkins
+
+********
+
+  - name: start apache2
+    service:
+       name: apache2
+       state: started
+       enabled: yes    -- which will start the service once the system is restarted
+
+host_vars  --> where we can create an var file separately for each host (it can be saved in the host name for easily visible)  and save our variable details. so we can call the ansible playbook and call the variable according to our hosts, like each server has different variable, so we can call different variable while running the playbook.
+
+group_vars --> basically in the inventory we will create a group name. so with that group name create a file under group_vars folder and save your variables, so that this variable will be apply to all the host under that group.
+
+In above we have written a code for creating web server and db server  in the same yaml file. In this we can seprate the task by creating folder task under that create two yaml file for creating webserver and creating db server (only save the steps code of these task)  and again create a seprate yaml file and then we can call them in that using below code (include)
+so under the task folder we have many task , so we can call them whenever we needed using include.
+
+---
+- name: deploy web applications
+  hosts: all
+  tasks:
+  - include: tasks/webapplilcation.yaml
+  - include: tasks/db.yaml
+
+ANsible galaxy -> is a community where we have pre-defined roles (lot) we can use them or we can create one for our purpose, ansible galaxy has been used above in our course.
+anisble galaxy has a website where all the roles will be there, we can also upload our roles in that. create a git repository with the name            "ansible-role-rolename" we should create in this name if we have to push the roles into galaxy. now upload all the files into that repo and then go to galaxy website login with your git credentials, and choose your account and it will show your repo , then jusy sync your repo with the galaxy . now it will be uploaded to the galaxy.
+
+ansible-galaxy search MySQL  ---> which will show all the roles that are in galaxy.
+
+Register : we can save the output to register. register: output_result   so our output will be saved in this. Check deeply
+
+async: our playbook will keep the ssh connection up until the task is done. so we can use async option in the playbook so that anisble will start the job and cut the ssh connection and after some time it will again establish the ssh connection to the server and check the status. so we can set the timing for this using async like giving check after 6 minutes. it should be in seconds. 360 seconds
+
+poll: in the above concept ansible will establish connection after 6 minutes for the status of the job that executed. but in our case if the job gets failed in 1st minute and we have to wait for other 5 minutes to get the result and this is waste of time. So we can use poll option to anisble to check the status of the job for each 1 minute, whaterver the time we can give.but it should be in seconds. 
+
+  name: Monitor Web Application for 6 Minutes
+  hosts: web_server
+  command: /opt/monitor_webapp.py
+  async: 360
+  poll: 30
+
+so we can save this result by using register
+
+name: Monitor Web Application for 6 Minutes
+  hosts: web_server
+  command: /opt/monitor_webapp.py
+  async: 360
+  poll: 0
+  register: webapp_result
+
+-
+  name: Monitor Database for 6 Minutes
+  hosts: db_server
+  command: /opt/monitor_database.py
+  async: 360
+  poll: 0
+  register: database_result
+
+Statergy: we have 2 startergy one is linear and other is free. default it will be linear. if we want it to free then we have to give strategy: free  in the header of the playbook.
+
+Linear statergy vs free statergy.
+
+eg, lets we have 3 task in the playbook and those task should be execute in the 3 servers. when we use linear statergy the first it will execute the first task in the all the 3 server simultaneously and once that completed with the 3 server then only it will go with second task. but In the free statergy each server will be independent all the 3 task will be executed one by one and it will not look for other server whether that task is completed or not.it will start execute the second task if first task is completed. but in linear it will wait for the first task to complete in all the 3 server. we can also give percentage wise like 20% (serial: 20%)
+
+lets assume we have 5 servers, and we want to execute the task 3 servers batch by batch in this case we can use serial option in the playbook header 
+"serial: 3"  which will run the first 3 server once that completed it will go for next. 
+
+there is a plugin called fork , which is same as serial , by default ansible has value for fork 5 in the config file. If we have 100 servers in the inventory when we run the playbook it will first execute the 5 servers. if we have to increase the value then we can change the fork value in the config file. before that we have to check whthere we have sufficient cpu resources and bandwith according to the fork value that we give. 
+
+IN serial we can also give like below example , like first 2 server then 3 server then 5 server
+
+  serial:
+    - 2
+    - 3
+    - 5
+
+
+Defaultly ansible will stop execute the task once the previous task failed in one server. for eg, if we have 3 server and in 1 server one task has been failed then it will stop execute the further task on that server only , other servers will be proceeding with task execution without any issues. this is default behaviour. But if we want other servers also to stop executing the task if one task failed in one server then we can use the plugin called "any_error_fatal: true" this should be in the ansible playbook header line (like task, become).
+
+
+We can also set mail option once the task completed it will send email, it is also one kind of task which can be executed at last
+
+- mail
+   to: email.com
+   subject: Webserver status
+   body: web server deployed
+ ignore_errors: yes
+
+All the modules are created by python script, we can also create our own custom modules .
+We also have plungins, like connection plugin which is used to connect with our client machine using ssh, strategy plugin we see in the above, Action plugin  etc. 
+
+Ansible components: 
+
+anisble configuration  --> config file where all the settings of ansible will be placed
+host inventory --> all the host information of manged noded
+core modules  -> anisble has pre-defined modules 
+custom modules --> we can create using python 
+playbook
+connection plugin -->ssh
+plugins
+
+
+Ansible inventory we can also give the information like this 
+
+server1:1234 anisble_connection=ssh ansible_user=john     --> (server1 will connect with the port 1234 (if ssh port is changed custom, so we can give like this and using john user name it will login to the server)
+
+we can also give the list of ip like this   192.168.2.[0:100]  it will give 0 to 100 ip lists like wise "server[01:100].example.com" it will give 100 list of server dns. 
+
+IF we need to know details for any module and how they can be used we can get it from system itself by giving command " ansible-doc yum" yum is a module, we can give any module that we need to get the information.
+ 
+ansible --list-host prod(groupname) or we can give all
+anisble-palybook --syntax-check webserver.yml   --- used for systax check
+anisble-playbook webserver.yml -k -- (-k ) is used for asking the password for root user when we use become inside the playbook . if we don't want to ask the password for root when we use become then we have to edit the sshd file in the client server to disable password for root
+ansible-playbook webserver.yml --step  --> this step option is used for executing the playbook task one by one . it will ask for confirmation like give yes to proceed with next task , and next task one by one .
+
+
+In the inventory we can group our servers like below. and also we can define our variables in inventory file also. below variable that we defined is called group variable 
+
+
+
+[server1]
+domain1.com
+domain2.com
+
+[server2]
+domain3.com
+domain4.com
+
+[server3:children]            ---- combining both group server1 and server2  we can set a group server3, where both server1&2 host will be added
+server1
+server2
+
+[server3:vars]   - for server3 we can set the variables, so these variables will be only set for this group
+
+user=joe
+dbname=test
+
+
+if we have to assign a variable for only single server then we can assign it as  below and we can call this as host variable 
+
+
+[server1]
+domain1.com    ansible_hosts=testing1 user=john                     -- these variables are assigned for single host 
+domain2.com    user=srini
+
+[server2]
+domain3.com
+domain4.com
+
+[server3:children]            ---- combining both group server1 and server2  we can set a group server3, where both server1&2 host will be added
+server1
+server2
+
+[server3:vars]   - for server3 we can set the variables, so these variables will be only set for this group
+
+user=joe
+dbname=test
+
+
+In the above case we assigned variable for single server and also group ( where these single servers are also being part of this group) . so  for host variable we assigned user as john in domain1 and in group the user is joe. while running ansible playbook which variable it will take?   it will take the host variable only. it will give priority to host variable first then only group.
+
+if we assign the variable in ansible playbook user=ram then it will give priority to playbook , not in the inventory.
+
+Create a simple playbook , create a directory and copy the file from ansible server to client server :
+
+---
+- hosts: all
+  become: true
+  become_user: root
+  vars:
+    remote_dir: /etc/ansible/facts.d            ---- for directory facts.d creation
+    facts_file: custom.fact
+
+  tasks:
+  - name: create a remote directory
+    file:
+      state: directory        --- mentioning its directory creation
+      recurse: yes            ---  facts.d will be created under the anisble dir, but if anisble dir itself its not created then it will create that too.
+      path: "{{ remote_dir }}
+    
+  - name: copy a file
+    copy:
+      src: "{{ facts_file }}"     -- the source will be in the ansible server, or where you executing this playbook should have the file custom.fact
+      dest: "{{ remote_dir }}"    -- this destination is for client onne , the file will be copied to the client server 
+
+
+Before we said using gather facts we can get all the information about the server and which can be called in the ansible playbook for certain conditions, but how can we know what name should be called for conditions, like we have to install software in system which has 8 core cpu , using gather facts ansible will collect the information but how we can get to know the name of the cpu core in the gatherfacts output. we can use below command
+
+ansible server1 -m setup  -- this will show the full information , we can get the variable name which shows the cpu core and we can use in playbook. 
+
+We can also print the server configuration details using ansible , using gather facts .  just printing 2 details for example , if we want we can call any variable that we want in the gather facts output
+
+---
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+    -name: print dns and ip address of the server using gather facts
+     debug:
+          msg: The Default address of {{ ansible_fqdn }} is {{ ansible_default_ipv4.address }}
+
+
+this will print the output has " The Default address of server1 is 192.168.1.1     -- these ansible_fqdn and ipv4 address variables are taken for gather facts output.
+
+When CONDITIONS:
+
+We can use "and" "or" in when condition.  "and" means both conditions should satisfy "or" means any one condition satify is enough to run the task. 
+
+REGISTER:
+IF we getting any output that output we want to store to a variable means we can use register : for eg below
+
+
+- name: Verify App/Database are running or not
+            shell: if ps -eaf| egrep 'httpd'| grep -v grep > /dev/null; then echo 'process_running'; else echo 'process_not_running'; fi
+            ignore_errors: true
+            register: appr_proc_check
+          - debug: msg="{{ appr_proc_check.stdout }}"
+          - name: Decision point to start patching
+            fail:
+                    msg="{{ inventory_hostname }} having running applications, please stop first and then attempt patching"
+            when: appr_proc_check.stdout == "process_running"
+
+In the above code , we just greping the httpd process running or not ,if running it will show output process running or it will show process not running . this output will be saved as a variable in register. appr_proc_check will store the value . That value we can use in any where in the code as variable. like  when: appr_proc_check.stdout == "process_running"
+
+
+Debug will show the msg what we putting in the debug colum, it will display while running the ansible-playbook whether it is process running or not running . but not sure why .stdout is there check on that. 
+
+
+FAIL module, In one task we will create a fail task, in that we mention if process running the task should stop and it will not proceed further, if it is not running then it will proceed. FAIL module will stop executing the task if the conditions is true. 
+
+
+
+- name: Current Kernel Version
+            shell: uname -r
+            register: curr_ker
+          - name: Initiating Patching
+            yum:
+                    name=kernel
+                    state=latest
+            register: yum_update
+          - debug: msg="kernel has been updated"
+            when: yum_update.rc == 0
+
+
+IN the above code we saving the current kernel version in register. and we installing kernel using yum and saving the output in register as (yum update)
+.  IN when condition we using yum_update.rc == 0 . this means what we checking is whether the kernel update is went successful or not. yum_update.rc == 0 means if the last command is executed successfully means it will show 0 , if not it will show any number. so if yum_update.rc == 0 menas the last command went successful that means the yum update went succesfull.  for eg, we can do this in simple command in our system by echo $?   which will tell whether last command that you executed is success or not.   check once whether 0 makes succesfull or number is successfull
+
+Complete patching playbook below. 
+
+---
+- hosts: patching
+  become: true
+  become_user: root
+  tasks:
+          - name: Verify App/Database are running or not
+            shell: if ps -eaf| egrep 'httpd'| grep -v grep > /dev/null; then echo 'process_running'; else echo 'process_not_running'; fi
+            ignore_errors: true
+            register: appr_proc_check
+          - debug: msg="{{ appr_proc_check.stdout }}"
+          - name: Decision point to start patching
+            fail:
+                    msg="{{ inventory_hostname }} having running applications, please stop first and then attempt patching"
+            when: appr_proc_check.stdout == "process_running"
+          - name: Copy the Kernel Patch Repo File
+            copy:
+                    src: /home/sverma/patching/kernel.repo
+                    dest: /etc/yum.repos.d/
+          - name: Current Kernel Version
+            shell: uname -r
+            register: curr_ker
+          - name: Initiating Patching
+            yum:
+                    name=kernel
+                    state=latest
+            register: yum_update
+          - debug: msg="kernel has been updated"
+            when: yum_update.rc == 0
+          - name: Check if reboot is required or not
+            shell: kernel_new=$(rpm -qa --last kernel | head -1| awk '{print $1}'| sed 's/kernel-//g'); kernel_now=$(uname -r); if [[ $kernel_new != $kernel_now ]]; then echo "reboot is required"; else echo "reboot is not required"; fi
+            ignore_errors: true
+            register: reboot_check
+          - debug: msg="{{ reboot_check.stdout }}"
+          - name: Reboot the system after patching
+            shell: "shutdown -r now"
+            async: 1
+            poll: 0
+          - name: Wait the system to come up
+            pause:
+                    minutes: 1
+          - name: New Kernel Version
+            shell: uname -r
+            register: new_ker
+          - debug: msg="New Kernel Version is {{ new_ker.stdout }} and old Kernel Version was {{ curr_ker.stdout }}"
+
+
+
+
+if we have to wait for few seconds to go to next task we can use below module
+
+- name: wait for 10 sec
+  wait_for: timeout=10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CHECK DEBUG OPTION why it is used for  -- this is to display the msg that we giving in the playbook.
+CHECK how to make dynamic inventory
+check verbose in ansible
+copy from same server and copy from control node to manage node  --
+check the diff between shell and command module , where to use it and when to use it
+Dictionary check inventory
+setfacts
+if condition as a module
+shell and command module difference
+how to get an output and put that output in separate variable .
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   	
+
+
+
