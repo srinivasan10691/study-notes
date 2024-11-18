@@ -1,0 +1,114 @@
+secret manager vs hashi corp , how secrets are called . how you used in your org. 
+
+AFRID:
+what type of storage class you using ebs or efs
+how long the migraton take place , like upgradeing the new version how long it will take
+deployment yepadi panuvinga , how your application is deployed,  CD part
+
+incremental backup  - check
+howmuch time it will take a complete cluster backup and how much time it will take to restore it - check
+what tool we have to use it has UI  --- check 
+ANy ip conflict we will have when we switching the datas from one cluster to to other cluster -- check
+what container tool you using
+
+
+
+
+Optional
+ 
+post/rest api
+reverse proxy and forward proxy
+datadog
+
+
+
+MYSELF
+
+desired, max , min   -- done
+aws eks update-kubeconfig --name cluster1   -- done
+all the versions 
+how to configure the aws credentials to access the terraform in secure way
+check the aws interview question in abishek
+s3 liecylcle 
+
+
+Videos to be watched
+
+devops interview questions
+
+
+
+
+
+FINAL things
+
+ansible
+aws
+terraform
+openshift
+Kubernetes
+Linux
+docker
+Jenkins
+monitoring
+CI/CD  -- altest 3 type of projects, and how exactly that works with vciti
+what you have done is previous company  ,, complete roles and add anything about the above tools to showcase
+css - add Kubernetes in the responsiblites and prepare what are the things that you done with Kubernetes
+try to add aws in both css and vir and mainly master with mostly used services.
+interview questions, aws, terraform , Kubernetes, ansible .. mainly aws interview questions abishek 
+Create resume accordingly make sure you can answer everyting in that resume 
+all the versions of the tools that you used. 
+what container runtime we used in company
+ask the things that are balanced with afrid
+secretes used in company
+jayaraj notes 
+create some jobs that you are worked in aws, any few important services task 
+
+&%$###########################################################################################################################################################
+
+Amazon EC2 --------
+Amazon S3  -----------
+Amazon VPC ------------
+AWS Lambda -------------
+Amazon CloudFront -----------
+AWS IAM --------------------
+EBS ------------------------
+EFS ----------------------
+Amazon Route 53 ---------------------
+cloudwatch ------------------
+AWS Secrets Manager -------------------
+AWS CloudTrail ----------------
+AWS WAF  ----------------------
+AWS Key Management Service  --------------------
+Amazon EC2 Auto Scaling ---------------------
+Loadbalancer _----------------------------
+EKS ----------------------------
+ECR---------------------------------
+ECS----------------------------------
+
+
+
+
+Amazon RDS
+Amazon DynamoDB
+AWS CloudFormation
+AWS Elastic Beanstalk 
+Amazon ElastiCache
+code commit, code pipeline
+##############################################################################
+CROSS
+integrate our AD for login with aws account
+subnet means what
+how many services are used in your microservice 
+
+
+
+
+
+Skill Up With Stan ------ channel name 
+
+
+
+
+
+
