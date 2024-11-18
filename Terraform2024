@@ -1,0 +1,790 @@
+OCT -12
+
+TERRAFORM:          --- GO language
+
+Install Git bash --> choose the option add the git bash to the windows terminal
+Download visual studio code
+install the terraform
+Install the terraform extention in visual studio . --- hasicorp terraform
+
+
+The Access Key ID is unique to the AWS account and identifies which account the IAM user belongs to. AWS uses this ID to determine:
+
+Creation s3 bucket using terraform :
+*****************************************
+
+Provider : Provider tells terraform where do you want to install the infra (like aws , azure )
+s3 -- service    bucket - resourse .
+
+The page that we going to reffer is - terraform aws provider -> In this we can search the service that we going to create and copy the templates from there.  like aws_s3_bucket 
+Argument in the terraform is the input given by the user
+
+Provider "aws" {
+region  = "ap-south-1"
+}
+
+resource "aws_s3_bucket" "first bucket" { --> the "first buk" is for ref inside this template,its nt anything going to do with aws.Arugments we can get it from site and create the template
+bucket = "mybucket"                        --> mybucket will be the bucket name in the aws
+}
+###################################################################
+OCT - 13:
+
+Create a folder for terraform and go into the folder and open the visual code. once done create a file name main.tf . and copy paste the above provider and resourse that we done .
+Create a IAM user in aws and get the access key and secret key . we can directly call them in the aws provider like below. But this is not best practise.
+
+Provider "aws" {
+region  = "ap-south-1"
+access_key = 
+secret_key = 	
+}
+
+resource "aws_s3_bucket" "first bucket"
+bucket = "mybucket" 
+}
+
+Cd into the folder where we have terraform script . main.tf file .  and open the command prompt
+terraform init    --> This is download the provider (aws) . Once we initiated it. we will get .terraform folder.
+terraform validate --> it will show any error in template.  
+terraform apply  --> It will apply the template 
+
+Now s3 bucket is created in aws infra. if we give again apply command, it will not do nothing because the actual state and desire state is same. Terrafrom will do the work if desired state is not matching to actual state.
+Desired state -- what we mentioning in template
+actual state  -- what is present in the provider
+
+Now adding tag into the bucket 
+
+tags = {
+    name = "mybucket from tf"
+    env  = "dev"
+}
+
+Activity 2: create a VPC
+
+IN this we are going to put the provider in different file as provider.tf  and the resources in the main.tf . provider is same as above so we will go with main.tf
+
+resource "aws_vpc" "myvpc" {
+cidr_block = "192.168.0.0/16"
+  tags {
+    name = "myfirstvpctf"
+  }
+}
+
+IN provider we changing the authentication, instead of directly giving the access and secret key we going to configure them using "aws configure" so that we dont need to give them in template . .aws/credentials  -> the password will be here
+
+Now apply them by init, validate and apply  --> vpc created with name myfirstvpctf . Once done destroy all them using terraform destroy
+
+--auto-aprove  -- will not ask for yes while executing the terraform apply
+
+###########################################################
+OCT 14
+
+AUZURE class
+
+###########################################################
+Oct 15 
+
+Varialbles -- instead of setting the value for arguments we can call it via variables, so that we can use that in future.
+
+Variable "variablename" {
+type = "type of variable"
+default = "default value"
+
+Type -- > types are string , number and bool
+
+Copy the provider , and create a vpc.tf inside that copy the above vpc template and then create a new file called input.tf(where we can define a variable)
+
+variable "target_region" {
+type = string                         
+default = "ap-south-1"                  --> if user not provided the input it will take the default variable as input
+}
+
+variable "vpc_range" {
+type = string
+default = "192.168.0.0/16"
+}
+
+Now we going to use the above variable in provider and vpc.tf
+
+Provider "aws" {
+region  = var.target_region     --> var.variablename
+}
+
+vpc.tf :
+
+resource "aws_vpc" "myvpc" {
+cidr_block = var.vpc_range
+  tags {
+    name = "myfirstvpctf"
+  }
+}
+
+Now just put # in default value and then try to execute the terrform init, validate, and apply. While executing apply it will ask for enter the values for string . we have to manually enter the details so then it will create the infra.
+
+we can also call the variable while executing the apply command
+
+terraform apply -var= "target_region=us-west-1" -var= "vpc_range=192.168.0.0/16" -auto-approve   - In this way we can call the variable 
+
+Now we going to use via default values -- destroy the previous infra by terraform destroy -var= "target_region=us-west-1" -var= "vpc_range=192.168.0.0/16" -auto-approve.
+
+Now remove the # that we given in default value. now we going to execute the infra with default value
+
+terraform apply -auto-approve  -> We not given any variable so it will take the default value and create the environment. 
+
+Passing alll the variable via command line is not a good idea,  so that we can create a file .tfvars and put the variables inside that and then we can call the file while apply the script.
+
+create a file dev.tfvars and enter the variables in this file
+
+target_region = "us-west-2"
+vpc_range     = "192.168.0.0/16"
+
+Now we can call the above variable via file --> terraform apply -var-file "./dev.tfvars" -auto-approve   
+
+once done destroy it 
+
+############################################################################################
+
+OCT 16
+
+
+Resources will have two king of dependencies --> implicit and explicit
+Firstly terraform find which has no dependencies and will execute that first   and then one by one it will execute by oder 
+Input of resource is argument and output of resource is arguments
+
+Implicit dependency : Using attributes of one resource as input then it is implict dependency  
+Explicit dependency : explict dependency is used by ourself for customizing the order of creation like ,after creating first subnet then we want to create the second one .  but it is not depend on each other eventhough we creating the dependency for one after one creation. 
+
+
+Creating subnet under vpc that we created.
+
+resource "aws_vpc" "myvpc" {
+cidr_block = "192.168.0.0/16"
+  tags {
+    name = "myfirstvpctf"
+  }
+}
+
+resource "aws_subnet" "first_subnet" {      --- To create a subnet we need to have vpc id that need to enter while creating subnet. 
+  vpc_id = aws_vpc.myvpc.id                   --- This is implicit dependency
+  cidr_block = "192.168.0.0/24"
+  tags {
+     "Name" = "first subnet"
+  }
+}
+
+
+resource "aws_subnet" "second_subnet" {      --- To create a subnet we need to have vpc id that need to enter while creating subnet. 
+  vpc_id = aws_vpc.myvpc.id                   --- This is implicit dependency  -- resource_type.resource_name.attribute
+  cidr_block = "192.168.1.0/24"
+  tags {
+     "Name" = "second subnet"
+  }
+  depends_on = [                             ---- explict dependency 
+   aws_subnet.first_subnet
+   ]
+}
+
+
+
+We can also mention the implict dependency in the format of explict, so that it can be easily understand while understanding the concept. eg below
+
+depends_on = [
+  aws_vpc.myvpc         we have done implicit dependency via calling the attribute,but why we mentioning here is to understand the concept. like this resource is depends on other resource
+]
+
+
+DO this excersise :
+
+create a vpc with subnets with name tags subnet1,2,3,4,5,6 
+
+###################################################################
+
+OCt 18
+
+
+For each subnet we creation one by one, instead of that we can create 6 subnet in one resource with looping concept.
+WE can create multiple resources using count meta-data
+
+Count --> based on condition we can create a resource. eg below
+
+Create a variable first
+
+variable "deployment_colour" {
+  type = string
+  default = "red" 
+}
+
+Main 
+
+resource "aws_vpc" "myvpc"
+  count = var.deployment_colour == "green"?1:0
+  cidr_block = "192.168.0.0/16"
+}
+
+resource "aws_vpc" "myvpc"
+  count = var.deployment_colour == "red"?1:0
+  cidr_block = "192.168.0.0/16"
+}
+
+###################################################################################
+Oct 19 -1
+ntier architecture
+
+create a database and then create a app server and then create a webserver  -- app server private and web server public and db server is private 
+
+this will be done in next class
+
+###########################################################################
+OCt - 20 
+
+Ntier architecture , create multiple subnet using count
+
+blocks : anything which have the curly brackets is are block .  resources {  -->resoucces is a block (eg)
+
+Version : we have many majar and minor versions, versions are releasing because if any new service released in aws then it will be available in new version(terraform will update them in new version) . so its always bettter to use the latest version so that all the services will be available and changes will be uptodate
+
+changing the provider.tf in different format using versions:
+
+provider.tf:
+************************************
+
+terraform {
+ required_providers {
+    aws = {
+      source = "hashicorp/aws
+      version = "~> 4.0"         --> any version related to 4 is ok|if its like = 4.0.1  then it should be specific version | if its like >= 4.0.1  its ok to hav grt 4.0.1
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
+
+inputs.tf:
+**************************************
+
+variable "region" {
+  type = string
+  descripton = "optional,  region where resourses will be created"
+  default   = "us-east-1"
+}
+
+variable "cidr_block" {
+   type = string
+   default = "192.168.0.0/16"
+}
+
+variable "cidr_subnet" {
+  type = list(string)
+}
+
+variable "subnet_name_tag" {
+  type = list(string)
+}
+
+dev.tfvars:
+***************************************
+
+region = "us-east-2"
+cidr_block = "192.168.0.0/16"
+cidr_subnet = [ "192.168.0.0/24" , "192.168.1.0/24" , "192.168.2.0/24" ]
+subnet_name_tag = ["web" , "app" , "db"  ]
+
+
+Network.tf:
+***************************************
+
+resource "aws_vpc" "ntier_vpc" {
+  cidr_block = var.cidr_block
+  tags = {
+    "name" = "ntier"
+ }
+
+#now subnet going to create, in this in single block we going to create 3 subnets
+
+resource "aws_subnet" "subnets" {
+  count = 3          ----> totally three counnt we can have  (0-2)
+  cidr_block = var.cidr_subnet[count.index]   ---> it will take the count (count =3 ) in oder
+  tags = {
+     "name" = var.subnet_name_tag[count.index]
+  }
+}
+
+
+
+
+#terraform has built in functions   --> go to website called terraform functions  go to collection functions and go to length functions
+
+length ([1,2,3]) --> output will be 3    totally the length is 3 so it will come as output
+
+so this length function we can call in count --> instead of givinng count = 3  we can give count = length(var.cidr_subnet)  ---> so whatever or how many numbers we giving in the dev.tfvars for cidr_subnet it will take that has count. so we dont need to mention the count as 3 or 4. if we give totally 4 subnets in dev.tfvars then it will take as 4 count. 
+
+count = length(var.cidr_subnet)
+
+we can also add availablity_zone to this . 
+
+#Now instead of typing all the subnets in the dev.tfvars "cidr_subnet = [ "192.168.0.0/24" , "192.168.1.0/24" , "192.168.2.0/24" ]" going to call network functions and make it as simple one
+
+function is named as cidrsubnet (prefix, newbits, netnum)   prefix is cidrblock and newbits is how much bits we going to add with /16 , netnum )
+in this case 
+cidrsubnet ( var.cidr_block,8,0)  this will create the first subnet (192.168.0.0/20) , cidrsubnet ( var.cidr_block,8,1)  this will create second one (192.168.1.0/20) , so like this it will create. 
+So instead of calling one by one subnet (0,1) like this , we can call the count index for callling 0,1,2,3, like this
+so it will be cidrsubnet (var.cidr_block,8,count.index)  so subnet will be created in single command, we have to remove the cidr_subbnet is variable and dev.tfvars
+and also we have to change the count value in network.tf
+before it will be count = length(var.cidr_subnet)  after we should change count = length(var.subnet_name_tag) . why because since we removed the cidr_subnnet we chaning them to nametag.
+
+create a infra with six subnet using network ip functions. --> job
+
+#################################################################################################################
+
+OCT 21
+
+Instead of calling the variables one by one , we can call them in all one block using "object"
+THis is for azure so kindly do it on your own for aws
+
+variable "resourcegroup"{
+   type = object (({
+     name = string
+     location = string
+    })
+  default = {
+     name = "ntier"
+     location = "us-east-1"
+    }
+}
+
+while calling the variable we can call like var.resoucegroup.name or var.resoucegroup.location , like this we can call each one
+
+
+Terraform apply --> first it will create a plan and then it will execute the plan
+terraform plan --> it will show what are the resourses that is going to create and delete in the infra .  to save the plan we can use -out filename 
+terraform plan -var-file="dev.tfvars" -out "ntier.plan"    -> this will save the plan in that name .. To create a plan it will check desire state and actual state and then create a plan
+and then we can give terraform apply "ntier.plan"
+.tfstate ---> this is nothing but , once after the terraform created the resources after executing the apply option whatever the state it is created it will be stored in .tfstate
+terraform.tfstate file has whatever state the terrafrom is created.
+
+
+Find a way to enable debug logs in terraform   --google it and learn it
+
+##################################################################################################################################################
+
+Oct -22 
+
+Let make the template that we created as module (reusable)
+
+Terraform has lot of modules developed by communities, terraform stores them in terraform registry ...... search in google for terraform registry we will get modules
+
+eg :
+
+module "vpc" {
+  source = (where the source moudle is located}
+  ------                       ---> whatever inputs that we need to give we can provide here like giving subnets , name tag . we can check the usage of that module and enter the inputs.
+-------
+-----
+}
+
+
+Now we going to creating a modules : and also learn about output:  output is nothing but it will basically display what we have created .
+
+create a file name called output.tf in that enter the below 
+
+output "resourcegroup_name" {
+  value = azureresource_group.ntier.namme                         ----> calling the resource group variable 
+}
+
+output "location"
+  value = azureresource_group.ntier.location 
+}
+
+once we execute the apply , resource will be created and once its done finally output values will be showed like below.
+
+
+OUtputs :
+ 
+location = "east-us"
+resourcegroup_name = "ntier_rg"
+
+
+Now we going to create a module :  module is not suppose to have provider and tfvars.
+create a folder -> module-usage-demo  --> modules -> myvnet -> inside this paste your .tf codes input.tf,network.tf,output.tf,resourcegroup.tf
+here myvnet will be module name, if we want to call the module in other code we have to call this name
+
+now go to module-usage-demo folder and create a provider.tf and main.tf file to use the module and create a infra ( we can create this anywhere but just for eg)
+
+module "myvnet"
+  source = "./modules/myvnet
+  ******
+  *****
+  check the input.tf file and enter the details whatever you want to create the infra. 
+
+) 
+
+optional = if we want to have total subent count we can call the output.tf and get the output like below
+
+output "subentcountfromoutputtf" {
+  value = module.myvnet.subnetcount                  --->myvent is moudule name , subnetcount is defined in output.tf file to get the total number of subnet. 
+
+
+
+Datasource :
+its help in fetching the information about the resources in the provider(aws).
+Now lets try to query the aws to get the vpc id of the default vpc. go to aws provider search vpc and then go to resource and choose aws_vpc (for getting resource temp)
+
+eg :
+
+Create a provider.tf  --> default one copy and paste
+create main.tf
+
+data "aws_vpc" "default" {
+  default = true   --------> true is for that we are going to take the default vpc
+}
+
+output "defaultvpcid" {
+  value = data.aws_vpc.default.id
+}
+**************************
+data "aws_subnet" "subnetids" {
+  filter {
+    name = "avalablity zone"
+    values = ["ap-south-1a"]
+  }
+
+output "subnetids" {
+  value = data.aws_subnet.subnetids.id
+}
+
+*************************************
+
+##################################################################################
+ oct 23
+
+create two vpc with 4 subent using count  
+
+resource "aws_vpc" "Myvpc_2"
+count = length (var.cidr_block)
+cidr_block = var.cidr_block[count.index]
+tags = {
+   "name" = var.vpc_name[count.index]
+}
+
+resource "aws_subnet" "primary_subnet"
+count = length (var.subnet_name)
+vpc_id = aws_vpc.myvpc_2[0].id                                             ------[0] will take the first paramenter and [1] will take the second one
+cidr_block = cidrsubnet(var.cidr_block[0],8,count.index)
+tags = {
+   "name" = var.subnet_name[count.index]
+}
+
+Try to do in different way like, create a moudle to create a vpc with four subent and then call the moudle twice . so that we can get two vpc and 4 subnet each. try tis.
+
+
+#####################################################################
+OCT 26   -  it seems going to create an ntier architecture (NOTE We are using aws module to create VPC check the site and get the usage )
+
+Let use aws-vpc moudule to create 6 subnet ( web1,web2  app1,app2  db01,db02)
+
+copy the moudule from the site and create network.tf and paste that , asusall copy the provider.tf which is deffault
+
+in the network.tf all the values will be mentioned directly , so make it as variable and call them from variable by creating input.tf and dev.tfvars. 
+
+While mentioning availablity zone like us-west2a us-west2b  we can call this in single function. all the availabity zone will be in the format of region(a) region(b). so we can call in this way 
+
+format ("%sa",var.reigion)  it will give us-west-2a  
+format ("%sb" , var.region) it will give us-west-2b
+
+Now we created vpc with 6 subnets , now we need to open security groups with open 3306
+
+locals  --> same as input.tf, just defining the values for calling in the main script . but the difference between input,tf and local is - we are passing the values for input.tf via .dfvars, but here no passing values we just defined everything in locals itself,so that we can call it anywhere
+
+locals {
+ az_a  = format ("%sa",var.reigion)
+ az_b  = format ("%sb" , var.region)
+mysql_port = 3306
+http_port  = 80
+ssh_port       = 22
+tcp  = "tcp"
+anywhere = "0.0.0.0/0"         -- the below ones are created for subnetgroup(which not yet learned)
+db_subnet_1 = 0
+db_subnet_2 = 1
+app_subnet_1 = 2
+app_subnet_2 = 3
+}
+
+create a securitygroup.tf (for security groups)
+
+resource "aws_security_group" "rds_sg"                - for db
+ingress {
+   cidr_block = [local.anywhere]
+   description = "open mysql"
+   from_port = local.mysql_port
+   protocal  = locals.tcp
+   to_port   = locals.mysql_port
+} 
+vpc_id = module.vpc.vpc_id
+depends_on = [
+  module.vpc
+  ]
+tags = {
+  "name" = "openmysql"
+  }
+
+}
+
+now database.tf   ----- 
+
+#Subenet group for db    learn this about subentgroup
+
+resource  "aws_subnet_group" "mysqlsubnetgroup" {
+  name = "mysqlsubnetgroup"
+  subnet_ids = [moudule.vpc.private_subent[local.db_subnet_1] , moudule.vpc.private_subent[local.db_subnet_2] ]
+  depends on= [
+    module.vpc
+]
+  
+#creating db
+
+resource "aws_db_instance" "default" {
+  allocate storage = 10
+  db_name          = "rdsfromtf"
+  engine           = "mysql"
+  engine_version   = "5.7"
+  instance_class   = "db.t2.micro"
+  username         = "root"
+  password         = "rootroot"
+  skip_final_snapshot = true
+  vpc_Security_group_ids = [aws_security_group.rds_sg.id]
+  db_subnet_group_name = aws_db_subnet_group.mysqldbsubnetgroup.name    
+  depends on = [
+    module.vpn,
+    aws_db_subnet_group.mysqldbsubnetgroup             ----> this is i not create so ignore this
+  ]
+}
+
+
+
+TIll now we created vpc with 6 subent and db
+##########################################################################################
+OCT - 28
+
+TAINT --> during next apply resource will delete and recreate the resources ( if we need to delete all the resource and recreate we can use this option. eventhough already an resource is created and we again giving apply means it will not do anything it will just skip but in this case it will delete the old one and again create a new one)
+
+so if we need to taint the subnet (totally we created 6 in that we have to taint one subent) so using below command we can taint one subnet
+
+terraform taint aws_subent.subents[6]    --this will taint the subnet 6 .. now give apply it will delete the subnet 6 and recreate it. 
+terraform taint resourcetype.resourcename 
+
+this taint will be usefull in ec2 creation, for eg we have template to create ec2 instance and we executed apply,  ec2 instance created but some checks issues has happened. in this case we have to recreate the ec2 instance again, so we can use the taint .  
+
+we can also untaint the resource if we mistakenly choose the different subnet instead of choosing the other one. terrafrom untaint -- but this shoult be done before apply
+
+terraform fmt --> this will alligns your code proper format, nothing will change in code.
+
+terrfrom graph:
+
+terraform plan -out="plan.out" -var-file="dev.tfvars"  ---> just taking the plan and put it in the plan.out file
+terraform show -json plan.out > plan.json  ---> this will convert to json format . and go to the site and uplod this plan.json  it will show diagramatic plan about our infra that we used in template
+ We can do thiis in another way  --> install the plugin in terrafrom graphziz (which will open dot format)
+now -- > terraform graph -type=plan > plan.out  --> this will save in our folder
+now open the dot file in terraform it will show as diagram.
+
+LETS add ec2 instance with public ip in web subnet:
+**************************************************
+
+
+ec2 needed -- > ami id, security group , keypair(optional),  here we have some difficulty to choose ami id in terraform,because ami id changes in each region. for now we taking manually
+
+Go to input.tf  and create a variable for ami_id 
+
+variable "ami_id" {
+  type = string
+  default = "ami-34972385203840982093"
+}
+
+
+we need to create a security group for web server . add this into the above one which we create before for rds
+
+
+resource "aws_security_group" "rds_sg"  {              - for web
+ingress {
+   cidr_block = [local.anywhere]
+   description = "open http"
+   from_port = local.http_port
+   protocal  = locals.tcp
+   to_port   = locals.http_port
+} 
+vpc_id = module.vpc.vpc_id
+depends_on = [
+  module.vpc
+  ]
+tags = {
+  "name" = "openmysql"
+  }
+
+ingress {                                        ----this is for ssh for inboung
+   cidr_block = [local.anywhere]
+   description = "open ssh"
+   from_port = local.ssh_port
+   protocal  = locals.tcp
+   to_port   = locals.ssh_port
+}
+
+egress {                                ---- it is for outbound
+   from_port = 0
+   protocal  = "-1"
+   to_port   = 0
+   cidr_block = ["0.0.0.0/0"]
+   ipv6_cidr_block = ["::/0"]
+}
+
+
+
+Now we need to create ec2 instance in webinfra.tf
+
+resource "aws_instance" "webec2"  {
+ami = 
+associate_public_ip_address = true
+instance_type = "t2.micro"
+key_name= "my_key_pair"
+vpc_security_group_ids = [aws_security_group.web_sg.id ]
+subnet_id = module.vpc.public_subnet[0]           --------------in moudule we can see the output file which taken the pubblic_subnet results, from that we taking the input
+tags = {
+ "name" = "web"
+ }
+
+depends_on = [
+  module.vpc,
+  aws_security_group
+]
+
+}
+
+Still we need to create app server . pending which will be taken care below
+##########################################################################################################
+OCT 29
+
+
+Terraform provisioning : Is used to peform extra operations after resources are created. THis could be generally executing the scripts
+
+Three types of provisioning
+
+local-exec        -execute the script in local machine where terraform installed
+remote-exec       -- execute the script in remote (aws) 
+file          --- copy the files from local to remote
+
+
+we have already created a web server above. In that we have to install appache . so we calling terraform provisioning  and also we neeed to ssh the remote so we need connection for that
+This thing will be written in webinfra.tf (already created above )
+
+
+provisioner "remote-exec" {
+   connection {                  ----in this we creating the connection to take ssh on remote server
+     type = "Ssh"
+     user = "ubuntu"
+     private_key = file ("~/.ssh/id_rsa")   ----this file will be in our local machine 
+     host = aws_instance.web.public_ip           --- ip to ssh the server
+     }
+   inline = [                                --- after taking connection it will run the below commands to install the appache.
+     "sudo apt update"
+     "sudo apt install appache2 -y "
+   ]
+
+TERRAFORM PROVISONER WILL RUN ONLY  when the resource is created .
+NOTE : provisioner block will work only once, because already web server created and provisoner block installed the appache . IF we made changes again the inline (like install something or starting apache)  it will not work, because terraform look only whether the ec2 instance is created or not, not the inside application configurations. it will check the webserver is created or not , if its created already it will skip the provisoner. so making changes in provisoner will not work. but we have other way to do this.
+we can taint the webserver and again run the terraform apply, so that webserver will be recreated and provisioner will also update .
+
+WE can also do it in another way without re-creating the webserver
+
+resource "null_resource" "webprovisioner" {
+ triggers = {
+   running_number = var.web-trigger                   --- create web-triger variable and assign the value like 
+}
+
+now paste the provisioner block below this null resource  . so whenever the number value is changed , it will trigger the provisoner block . so that updated script will work
+
+nullresource --: it a way for running some scripts forcefully. 
+
+As of now the terrform state file is maintained in the local folder. when we try to execute the same infra from different system or different folder it will also generates a new state file which means resources will be provisioned again (already its provisoned in another folder)
+
+backend is location where your state file gets stored. default backend is local this is why our state file is placedin our folder
+
+so let us make the state file common in s3 bucket and create dynamo db for locking the state file if any user using the statefile.(it means some user is executing the template)
+
+create a backend.tf
+
+terrform {
+  backend "s3"
+    bucket = "thisisforterraform"
+    key    = "ntierdeploy"
+    region = "us-west-2"
+    dynamodb_tabe =  "thisisdynodbtable"    create a dynamodb table and give the partition key as "LockID"  -- check doc sometime partition key may change
+}
+
+so now user one is try to executing apply , it will aquirelock . at the sametime user 2 trying to execute apply it will show already user1 is working
+
+Now we have different case. if user2 trying to create a environment for "qa" with different values (qa.tfvars). so he is trying to execute apply but it is still locking, eventhough is he doing for qa env with different values but still its locks . 
+In this case we using workspace. terraform workspaces allows us to create locking per workspae.
+each workspace consider as one environment.
+So currently we are in default (workspace). to create a new workspace --> terrafform workspace new qa    
+now it will create a new workspace in the name of qa and we are now in qa workspace.  to check that " terraform workspace list" it will show which workspace you are currently in . 
+Now we can run the terraform apply with qa.tfvars it will work. 
+
+Excersise : how to configure terrform aws provider to create resources in two regions. 
+
+#####################################################################################
+oct 30  - create two vpc in different region
+
+in the provider.tf  we already configured single aws provider with region single region , now we going to configure with two region
+
+provider "aws" {
+region = "us-west-2"
+alias = "primary"
+}
+
+provider "aws" {
+region = "us-west-1"
+alias = "secondary"
+}
+
+
+network.tf
+
+resource "aws_vpc" "primary"
+provider = aws.primary    ----this we calling the primary region it will create the vpc
+cidr_block = "-----"
+
+resource "aws_vpc" "secondary"
+provider = aws.secondary   ----this will create the vpc in secondary 
+cidr_block = "-----"
+
+
+
+#########################################################################################################################
+Terraform refresh:
+
+update the local state file against the aws resources.
+
+For eg :  in the terraform file we created ec2 instance subnete and s3 bucket in aws . Now somebody goes and delete the s3 bucket . So now state file is not matching with awsresources that we created. So to make that same we have to do terraform refresh , so that it will cheeck the aws resources and make the changes in state file accordingly.
+
+First to check what are the resource that we created using terraform state list
+once done , delete some aws resources and do terraform refresh
+once done check whether that resources has been removed from state file by using terraform state list. 
+
+################################################################################################################SSS
+
+Since there is cloudformation , azure template, and other IAC code why terraform
+
+all these template are specific to their tool, but terraform where we can use our code for all the platform like aws, azure and other things, just we have to mention the provider. 
+
+terraform init will configure the backend and ensure it is initialized
+terraform init downloads and installs the necessary provider plugins for the services you are using in your Terraform configuration files
+Terraform uses providers to interact with different cloud platforms and services.Providers are essentially plugins that tell Terraform how to interact with APIs of various infrastructure services.
+
+Terraform plan : whish is like dry run, which is going to tell what are the resources you are going to create like that , but it will not create as i SAID IT is dry run things.
+
+lifecycle --  init - plan - apply --destroy
+
+
+
+
+END
+
