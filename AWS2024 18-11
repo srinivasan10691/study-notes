@@ -1,0 +1,2153 @@
+AWS - polices made of json script
+Roles - > Allowing one service accessing the other service : eg: ec2 accessing s3 bucket
+Policies --> is nothing but its a permission that we giving to the user. in aws there a many default policies, if we want we can create our own. 
+IAM is universal it is not depend on regions
+cloud watch - billing alarm ->set the amount so that it will alarm when it reaches the amount
+
+Currently there are 30 regions are there in aws
+
+
+we can attach the policy directly to the user , and also we can attach the policy to the role and then that role can be assigned to the user.
+which is best, the policy should be attached to the role and then it have to assigned to the user because 
+ Roles allow you to grant time-limited access (e.g., a temporary security token) without permanently attaching permissions to the user. whereas the policy will be permentely attached with the user. 
+
+**************************************
+S3 -> Simple storage service
+Files can be from 0bytes to 5 tb | S3 universal name space (s3 name should be unique)
+multipart upload in S3 is specifically designed for efficiently uploading large files, like splitting them .
+IF s3 files upload got succesfull we will be HTTP 200 code response (Exam que)
+MFA for deleting the object. which will protect from other person deleting the object without your permission
+*******************************************************************************************************
+Below are the features that we paying for s3 while using
+
+# storage  per gig
+#Request and data retrievel 
+Data transfer
+Management and replication 
+
+
+S3 charges based on storage (amount of data stored), requests (number and type of operations like PUT, GET), and data transfer (amount of data transferred out of S3).
+**********************************************************************
+S3 bucket classes  - (multiple region)
+* S3 standard:  This is the default storage class for S3 buckets and provides high durability, availability, and performance for frequently accessed data
+        99.99% availability
+        99.99999999999% Durability (11 9)
+        Stored in multiple region
+
+* S3- IA (Infequently Accessed )  - (multiple region)
+      It is designed for data that is accessed less frequently, Lower fee than s3 standard, but you are charged a retrieval fee
+
+* S3 - intellignet Tiering
+      Designed to optimze costs by automatically moving data to the most cost-effective  tier without any impact . It will move the data between standard and IA.
+Automatically moves data between access tiers based on changing access patterns to optimize costs.
+
+
+* S3 One Zone - IA
+      This is for lower-cost option for infrequently accessed data, but stores data in a single availability zone instead of multiple availability zones.
+
+###* S3 Glacier instant retrieval:
+     It is an archive storage class that delivers the lowest-cost storage for data archiving and is organized to provide you with the highest performance and with more flexibility. S3 Glacier Instant Retrieval delivers the fastest access to archive storage. Same as in S3 standard, Data retrieval in milliseconds .
+
+###* S3 Glacier Flexible Retrieval:
+      It provides low-cost storage compared to S3 Glacier Instant Retrieval. It is a suitable solution for backing up the data so that it can be recovered easily a few times in a year. It just takes minutes to access the data. 
+
+* S3 Glacier: This is a low-cost storage class designed for data archiving and long-term storage. It is suitable for data that is rarely accessed and can tolerate retrieval times of several hours.
+
+* S3 Glacier deep archive
+     This is also low cost storage archive then s3 glacier ,It is designed for data that is accessed once or twice a year and can tolerate retrieval times of 12 hours or more.. S3 Glacier Deep Archive also have the feature of objects replication.
+
+
+#####################################################################################
+
+simple exp of s3 glacier buckets and its differences.
+
+S3 Glacier: This term generally refers to Amazon’s archival storage options, which include different retrieval methods based on your needs.below are the options that we can use
+
+S3 Glacier Instant Retrieval: Designed for archive data that needs to be accessed immediately, with retrieval times in milliseconds.
+S3 Glacier Flexible Retrieval: Offers multiple retrieval options (Expedited, Standard, and Bulk) with varying retrieval times from minutes to hours, providing flexibility based on how quickly you need the data. Generally has a lower storage cost compared to Instant Retrieval and offers free bulk retrievals, making it cost-effective for large-scale data retrievals1.
+
+So, while both Instant Retrieval and Flexible Retrieval are part of the S3 Glacier family, they cater to different use cases based on retrieval speed and cost considerations.
+
+Here’s a comparison between S3 Glacier Instant Retrieval, S3 Glacier Flexible Retrieval, and S3 Glacier Deep Archive:
+
+S3 Glacier Instant Retrieval:
+
+*Retrieval Time: Milliseconds.
+*Use Case: For archive data that needs immediate access, such as medical images or news media assets.
+*Cost: Higher retrieval cost compared to Flexible Retrieval and Deep Archive.
+
+S3 Glacier Flexible Retrieval:
+
+*Retrieval Time: 3 types
+    Expedited: 1-5 minutes.
+    Standard: 3-5 hours.
+    Bulk: 5-12 hours.
+*Use Case: For archive data that does not require immediate access but needs flexible retrieval options, such as backup or disaster recovery.
+*Cost: Lower storage cost than Instant Retrieval, with free bulk retrievals.
+
+S3 Glacier Deep Archive:
+
+*Retrieval Time: 12 hours or more.
+*Use Case: For long-term archival of data that is rarely accessed, such as compliance archives and digital media preservation.
+*Cost: The lowest storage cost among all S3 Glacier options.
+
+
+ #################################################################################
+
+properties -- versioning , tag , encryption, intelligent tireing archive configuration
+permissions - block public acess , bucket policy , ACL, CORS (corss orgin resource sharing)
+metrics --  bucketsize, total number of objects and other metrics we can able to view. 
+Management - lifecycle rules, Replication rules, Inventory configurations.
+Access point - we can create access point here 
+
+creation -- bucket name -- acs enabled,disabled  -- block public access -- bucket versioning -- tags --  encryption -- advance setting object lock 
+
+bucket region is must 
+
+
+Restricting Bucket access - > Bucket policies ( apply on whole bucket) object policies 	(applys on object) and IAM policies for users and groups that acceess the bucket
+
+AES-256 - encryption are done by thins method
+
+WE can set the logs for who ever acessing the object will store in logs, these logs can be save in same bucket or also in different aws account
+
+s3 objects and bucket can be encrypted by three ways
+
+* S3 managed keys - SSE-S3  (sse is server side encryption) -- managed by amazon s3 , it is basic encryption and there is no cost. which is default encryption method for s3 
+
+* Aws key management service managed keys - SSE - KMS --- where our s3 buckets can be encrypted with the amazon kms service, where we can manage our keys like rotating the passwords, auditing and other things. this one will be cost for usage. but this can be more secure 
+
+* Server side encryption with customer provided key --- where we can create our own key using openssl and while upload the data in s3 we have to pass the key along with the data. so using this key the s3 will encrypt the data and store it in the bucket and it will clear the key which is sent to s3 for encryption. so s3 only have the data which is encrypted. so when we have to download the data we have to pass the key with the command for download the object, then it will automatically encrypt the data and it will be downloaded in our path.  this is more more secure then the other two kms option that given above. 
+
+DSSE-KMS   -  combines two layers of encryption  ( this is for only objects) not for bucket
+
+S3 Managed Encryption (SSE-S3): The first layer uses the default Amazon S3 encryption, which encrypts the data on disk with AES-256 (Advanced Encryption Standard).
+AWS KMS (Key Management Service): The second layer uses AWS KMS keys (either AWS-managed keys or customer-managed keys) to encrypt the encryption keys used for SSE-S3 encryption.
+
+Amazon S3 automatically encrypts all new objects by default using server-side encryption with Amazon S3 managed keys (SSE-S3) at no additional cost12. This means that any new objects you upload to S3 buckets are encrypted by default without requiring any additional configuration.
+
+However, if you need more control over your encryption keys, you can choose other encryption options:
+
+SSE-KMS: Server-side encryption with AWS Key Management Service keys, which allows you to manage your own keys and provides additional security features.
+SSE-C: Server-side encryption with customer-provided keys, where you manage the encryption keys yourself.
+#######################################################
+S3- Versioning  ( Versioning can be enabled while creating the bucket) once its enabled we cant disable it , only we can suspend it. 
+
+Stores all versions of objects( even it is deleted) , Its like backup tool
+Once versioning is enabled it cannot be disabled, only it can be suspended ( properties -> bucket versioning -> suspend)
+We can use MFA in versioning for additional layer of security
+
+					
+For eg : uploading a text file named doccument in bucket, and again uploading the same doccument with different content , and again uploading the same doccument with different content. SO that we have all the three versions which we have uploaded and if we delete the doccument also it will be in "list version tab"  so that we can restore the data again by deleting the "Delete marker " file so that the files will be restored again
+
+
+IF we make the object public means it will not reflect public access in all the other versions of the object. you want to make it them public for each and every version of the object seperately.
+
+Example :  First we make the object named txt file and make it public.  And the we made some changes and reupload them again , so we can two version of files. IN this case when we try to access the different version file( which is not made public  ) it will not work because we have to make them public seperately. because after making the object public we have uploaded the two files, so the two versions of files will not be in public.  IF we have to make all of them public again  we have to make them public each verison seperately.
+#############################################################
+Life cycle Management
+************
+
+go to any bucket and go to management tab and we can go to life cyle rules option and create rule for it 
+
+Life cycle rule is used to transfer the objects between different storage tiers. We can set the days limit like when to transfer the files to different tires and which files we have to transfer
+ 
+Automates moving your objects between the different storage tiers and also it can be applied to current versions and previous versions>
+
+Using life cycle management we can also delete the versions of the object by setting the no of days. if we set 60 days all the version that has 6o days will be remvoedd. 
+
+#########################################################################################################
+
+S3 object lock and glacier vault lock   (both are similar)
+*****************
+
+Object lock :  
+
+It is used to store objects using write once , read many (WORM) model
+Object Lock: You enable Object Lock at the bucket level when creating a bucket or later, and you can apply it to individual objects.
+
+Retention Modes: You can set Retention Modes:
+Governance Mode: Users with specific permissions can override the lock (useful for administrators).
+Compliance Mode: The object cannot be overwritten or deleted by anyone, not even the account owner, until the retention period expires.
+Retention Period: You define a retention period (e.g., 1 year) during which the object is immutable.
+
+S3 Object Lock is used to prevent objects from being deleted or modified for a set period, ensuring data immutability for compliance, legal holds, or protection against accidental deletion.
+############################################################
+S3 performance
+*************
+Prefix : In between the bucketname and object are prefix
+eg : mybucketname/folder1/subfolder1/myfile.jpg  ---> here prefix is /folder1/subfolder1
+eg : mybucketname/folder3/myfile.jpg    -> here prefix is /folder
+The more prefix will be better performance
+#######################################################
+S3 select ->  we can use simple sql expersion to return only the data from the s3 that you are interested in instead of retrieving the entire object. Which improves the performance of your application
+
+S3 Select enables you to query and retrieve specific data from large objects in S3, improving efficiency and reducing data transfer costs.
+
+Example: You have a large CSV file with sales data, but you only need data for a specific region. S3 Select allows you to query just that portion, reducing the amount of data transferred.
+
+ Instead of downloading a huge file to process it locally, you can use S3 Select to pull only the needed data, saving on bandwidth and processing costs.
+
+Extract specific log entries from large log files stored in S3 for troubleshooting or monitoring, without needing to download the entire file.
+####################################################################
+AWS Organisations :
+ it enables you to centrally apply policy-based control across multiple aws accounts. we can consolidate all the aws account into an organisations. 
+Go to aws organisations -> invite other aws account -> accept the invitation from other aws accounts.
+
+Centralized Billing: Manage multiple AWS accounts under one billing umbrella, consolidating costs for easier management.
+Resource Sharing: Share resources like VPCs, IAM roles, and AWS Directory Services across accounts.  
+Organizing Accounts by Teams/Departments: Separate AWS accounts for different teams or departments to isolate workloads and manage permissions.
+
+SHARING s3 buckets across accounts
+************
+3 different ways to share s3 buckets acrross accounts
+* Using Bucket policies and IAM -> programmatic access only    ( Applies only on buckets not on individual objects)
+*Using Bucket ACLs and IAM -> Programmatic access only ( Individual Objects)
+* corss-account IAM roles - Programatic and console access.
+how to do CROSS-ACCOUNT s3 access :
+****************
+We have to create a organisational account and add the other aws account to the organisation account  ( My account -> my orgainisation account )
+( Master account A) Go To IAM role and select "Another aws account" and type the acccount iD , and then attach policy for which service you need to acess  (eg: s3 ) and then enter role name "s3_cross account " so role is created and note the link for access from other account
+Now go to account B :  Go and add user with admin acess  , we cant do that in root user
+Once user created copy the  user access link and sign out and login as user
+Go to account and switch role and click switch role and paste the s3cross account link and click switch role  . Now we logged in to another account but we have only s3 access ( you can create s3 bucket and view the objects )
+
+
+Pratical:
+
+Account A:
+Create a role --> Choose otheraccount (enter the accountB account id) -> s3   with permission s3fulll acess 
+
+Account B:
+Login to user (not as root)
+click switch role  it will ask for accountid (enter the account A id) and it will ask for role ( enter the role name that created in account A) . 
+
+Now user can access the s3 alone
+
+Since we used the account b user as admini before , the above steps worked . but when we does not give admin acess and give normal permission to the user the above step is alone not enough, we have to additionally add permission to the user for "assumerole"  its nothing but the user should have permission for "assumerole" 
+
+AssumeRole is a mechanism that is used in specific scenarios to enable temporary, cross-account, or restricted access, or when delegating permissions to another service or user.  (simply we have permission to access the role and attach to itself so that it can able to access the other account services )
+
+
+########################################
+https://www.youtube.com/watch?v=3m8xwwCnrp0
+
+Cross region replication
+*****************
+Versioning must be enabled on both the source and destination buckets
+Files in an existing bucket are not replicated automatically ( once we created the replication it will ask whether it should sync the prvious data or upcoming date  by running batch job)
+All subsequent updated files will be replicated automatically
+Delete markers are not replicated and deleting individual versions or delete markers will not be replicated. IN options we can enable this to replicate.
+How to do replication
+Create a bucket in same region with versioning enabled . Go the master bucket (which we need to replicate) and go to management and replication rules and create a rule
+ Choose IAM rule and create a new role  and then choose applies to all objects in "soucre bucker " option  and choose a bucket which you need to replicate and enable versioning and click save
+Check creating a new object and check whether it is replicated. ( If you change the object in public in source end it will not be the same in the target end
+
+####################################################################################
+Cross account sync
+
+
+Create two buckets in source and destination bucket.  source bucket enter the bucket policy given below and go to destination create an Role with given below policy  and attach that to user .
+
+
+
+Destination IAM user enter the below policy:
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::cross1",                ---source bucket
+                "arn:aws:s3:::cross1/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:PutObject",
+                "s3:PutObjectAcl"
+            ],
+            "Resource": [
+                "arn:aws:s3:::otheraccrepl",            ----destination bucket
+                "arn:aws:s3:::otheraccrepl/*"
+            ]
+        }
+    ]
+}
+
+
+Source bucket policy :
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowCopy",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::366106965857:user/srinivasan"   - destination Iam user 
+            },
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::cross1/*",
+                "arn:aws:s3:::cross1"
+            ]
+        }
+    ]
+}
+
+
+EC2 creation:
+
+Name -- ami -- instance type -- keypair -- networksettings like vpc , subnet, autoasign publicip,  securitygroup -- storage --
+
+################################################
+S3 transfer acceleration
+*********************
+s3 transfer acceleration uses the cloudfront edge netwrok to accelrate your uploads to s3. instead of uploading directly to your s3 bucket, you can use a URL to upload directly to an edge loaction which will then tansfer that file to s3. 
+
+Choose the bucket that you need to enable s3 transfer acceleration -> properties --> enable transfer acceleration . we will get the endpoint urlccopy the endpoint. IF we need to transfer the files to that bucket we can use that endpoint url, or if we have to view some files in that bucket we can use the enpoint (eg :  endpoingurl:/djf.jpg)
+Endpoint url is cloudfront edge network. 
+Once transfer acceleration is enabled, it can only be suspend . we cant disable it
+
+[root@ip-172-31-47-80 ec2-user]# aws s3 cp set s3://otheraccrepl --endpoint-url https://otheraccrepl.s3-accelerate.amazonaws.com
+upload: ./set to s3://otheraccrepl/set
+
+
+[root@ip-172-31-47-80 ec2-user]# aws s3 ls s3://otheraccrepl --endpoint-url https://otheraccrepl.s3-accelerate.amazonaws.com
+2023-03-27 12:47:14       1055 TIMESHEET.txt
+2023-03-27 23:04:41          0 set
+[root@ip-172-31-47-80 ec2-user]#
+
+
+###########################################
+Aws datasync : Allows us to move the large amount of data from on-premises to aws . replication can be done hourly daily or weekly .
+install the datasync agent to start the replication . 
+Can be used to replicate EFS to EFS
+
+s3 bucket to s3bucket data transfer using aws data sync
+
+Go to aws datasync service - > choose between aws storage services -> get started -> enter the source bucket details -> enter the destination bucket details -> and start the job
+In this we can filter the files that needs to be transfer 
+we can also choose the storage classs to destination
+
+we can use s3 replication for data transfer , but in different situation we can use the aws datasync, like one time transfer etc. 
+
+#################################################
+Cloud front : CDN content delivery network
+
+Edge location : this is loacation where content will be caached . This is separate to an aws region
+Orgin : This is the orgin of all the files that the CDN will distribute. This can be an s3 bucket , an ec2 instance, or an elastic load balance or route 53
+Distribution: This is the name given the CDN which consists of a collectionof edge location 
+
+Amazon cloud front can be used to deliver your entire website, including dynamic, static,streaming  content using a global network of edge locations. requests for your content are automatically routed to the nearest edge location 
+
+Cloud front has 2 different types of distribution 1) web distribution - typically used for websites 2) RTMP - used for media streaming
+
+Edge locations are not just READ only  you can write to them too (ie putting an object to edge location and that transfer to s3 bucket)
+Objects are cached for the life of the TTL (time to live ) option will be available while creating 
+You can clear cached objects , but you will be charged
+
+########################################################
+Create a cloud front distrubution - LAB
+
+Go to network - > cloud front  ( cloud front is global services it is not region basis )
+
+cloud front -> create distribution -> web -> get started -> choose the origin  | we can also restrict bucket accesss - by users always need to access amazon s3 content using cloudfront url not amazon s3 url . and also we can set TTL value in the filed. and also we can restict viewer access (use signed urls or signed cookies ) eg: amazon, netflix only the user have prime account can access the video . and create distribution 
+copy the domainname   paste it in web and type the  file name in the s3 bucket eg : domainname/file.jpg (web)
+Go to the distribution and go to settings and there will be invalidation options ( which is used to remove the objects from edge locations ) we can enter the path of the file in the box which will remove from the edge location . We can invalidate individual objects and also full directories like giving in the box /* 
+
+Invalidation : Invalidating objects removes them from cludfront edge caches
+
+delte the distribution it is not free tier
+
+
+Cloudfront example:
+
+if s3 has a certain videos or pictures, so when user try to access the s3 he may see latency , because many of them will try to access the s3 at a time, and also cost will be high for each and every get request in the s3.  in that case we using cloud front. we can create a distribution in the cloud front and point to our s3 bucket. where cloud front itself will create a user (functional id) to access the s3 bucket for datas, to disply to the end user. where we blocked public access to s3 bucket no one can access the s3 url to get the datas, but cloudfront have access to access the data in the s3 bucket by functional id. where it will create bucket policy that only this function id  can access the datas from the bucket. so when we try to access our videos or website that hosted in the s3 bucket it will reach the cloudfront and cloudfront will access the datas from the s3 and then it will share the data. where in this we giving security to the s3 for not access the data directly by any user and also the latency where the datas will be cached in all the edge routers. 
+
+
+
+
+####################################################################################
+
+Cloudfront signed url and cookies :
+
+
+A Signed url is for individual file  1file = 1 URL
+A signed cookies is for mulitple files   multiple files = 1 cookies
+
+When we create a signed url or signed cookies, we attach a policy
+
+We can also put below settings
+* URL expiration * IP range * Trusted signers (which AWS account can create signed URL )
+
+######################################################################################
+
+cloud front signed url / s3 signed url
+**************************************
+Use signed URls/Cookies when you want to secure cntent so that only the people you authorize are able to access it  (netflix amaozon)
+IF your origin is EC2 then use cloud front signed url  . and if it is S3 then use s3 signed url insted of cloud front signed url
+Check
+*****************************************************************
+Snowball :  it is used to import to s3 and export from s3
+If we need to transfer the large amount of data to aws we can use snowball ( physically they will transfer the data  , there will be box )
+######################################################################
+Storage gatway :  Is a service that conects an on premises software appliance with cloud based storage. The service enables you to securely store data to the aws cloud for scalable and cost-effective storage
+#File gateway : For flat files,  stored directly on s3 . For eg : Files are stored in your s3 buckets, and accessed through NFS mount point . We can store the data in mount point so that it will be direct store in s3
+#Volume gateway  : The entire virutual disk is backing up on the s3 by EBS snapshot . and it is syncing and updated blocks will be updated in the snapshot
+  * Stored volume:  you can create storage volumes and mount them as iscsi devices from your application server. Data written to your stored volumes is stored on your on-premises storage hardware. This data  is synchornously backed up to amazon s3 in the form of EBS
+  * cached volumes : Entire dataset is stored on s3 and the most frequently acceseed data is cached on site
+# Tape gateway :  It is used to archive your data in the aws cloud
+####################################################################################
+Athena :
+
+Athena is interactive query service  which allows you to query data located in s3 using standard SQL,
+Serverless,nothing to provison , pay per query/per TB sccanned
+commonly used to analyse log data stored in s3
+
+Macie :
+Macie uses AI to analyze data in S3 and helps idntify PII ( Personal Identifiable information  ) - all the important information like add,bank details, phone number,pan number, driv licen
+Can also be used to analyse cloud trail logs for suspicious API activity. and also previnting ID theft
+includes dashboards, reports and alerting  .
+               
+####################################################################
+
+S3 & IAM summary
+*****************
+S3 Object lock - to store objects using a write once, read many (WORM) model 
+
+ Policy will be in Json format, Sample is below
+
+{
+"version":"2012-10-17",
+"Statement":[
+   {
+  "Effect":"Allow",
+  "Action":"*",
+   "Resource":"*"
+   }
+ ]
+}
+
+*The key Fundamentals of S3 are 
+*Key  (This is simply the name of the object)
+*Value ( This is the data and is made upa a sequence of bytes)
+*Version ID ( important for versioning)
+*Metadata (Data about data you are storing )
+*Subresources:
+  Access control lists
+  Torrent
+
+Prefix
+
+You can also acheive high number of requestes : 3,500 put/copy/post/delete and 5,500 get/head requests per second per prefix
+You can get better bperformance by spreading your reads across different prefixes(folder)  for example if you are using two prefixed, you can achieve 11000 requestes per second
+
+* IF you are using SSE-KMS to encrypt your objects in S3, you must keep in mind the kms limits   (region specific)
+
+*UPloading and dowmloading will count towards the kms Quota, and you cannot request a quota increase for KMS
+
+
+#################################################################################
+EC2 - Elastic compute cloud 
+****************************
+
+Ec2 is a webservice which provides resizable compute capacity in the cloud . And also it helps to create a new server within a minute .
+
+Pricing Modules:
+
+ON demand :
+
+Without any upfront payment or long term commitment we can create a servers and also which is more flexible
+
+
+Reserverd :
+
+Have to pay upfront to reduce the total cost  and have to be in contract from 1 year to 3 year
+
+Reserverd pricing types
+
+  Standard reservered instance :  the more you upfront and the longer the contract, then there will be greater discount
+
+   Convertible reservered instance : We can convert the instance type ( by increasing CPU usage Ram usage ) 
+
+  Sheduled reservered instance : These are used to launch within the time window you reserve ( like school college timing 9 t0 6 )
+
+
+Spot      : Amazon selling there excess capacity at lower range to occupy their capacity fully. once they needed their capacity then you have to pay what they ask otherwise  it will be back to them without any notification 
+
+***************************
+Create a EC2 instance - already done    (2 type of check "system status check and instance status check")
+If we need to login to the instance from command line use " ssh ec2-user@ip -i key.pem "  (you should run the command where the key is located ) we can give the permission to the key as chomod 400 
+
+If we create a windows , we have to add an extension to chrome "secure shell App " from that app we have to login to the windows console
+* We have to get the Pub key to access the console. IN that case we can get the pub key from the private key which we downloaded while creating the VM
+* ssh-keygen -y -f mykey.pem > mykey.pub   (which will give the pub key) we can do this from command prompt
+Once we get the pub key , we have to change the mykey.pem to mykey (remove .pem) . And the upload both mykey & mykey.pub in the secure shell app to login to the windows 
+
+
+Creating a webserver :
+
+Yum install httpd -y
+cd /var/www/html/   (go and create on html page )  <html><h1>hello</h1></html>  index.html(file name) | Service httpd start | chkconfig on ( will check and turn on the service if itis down)
+
+
+* If we terminate the instance, the root partition will also be deleted but if we add the addtional volume (EBS) it will not be deleted while the instance is terminated , we should manually do it.
+
+While creating the instance we can encrypt the root volume in the storage option and also we can encrypty the addtional volume
+
+#####################################################################
+Security groups - LAB
+
+The changes made in security groups will take effects immedietly. 
+If me remove all port from outbound rule and then try to access the webpage it will work , because in inbound we allowed the port 80 so obviously it will allow in outbound also even if we removed the port from outbound list . because security group is statefull.
+We cant block list any ip or port in security groups, there is no block option. But default everything is block  in default we have to add it for allow, but we can do that in NACL (network access control list )
+We can attach more than one security group for Ec . Action -> networking -> change security group -> and choose the other security grup
+
+All inbound traffic is blocked by default
+All outbound traffic is allowed
+We can hae any number of EC2 instances withina security group.
+#################################################################################
+EBS 
+
+Elastic block store . Comes 5 different types
+                                                                                                                 USE CASES   
+General purpose (SSD)                          - is gp2(API name)   volume size: 1 GB -16 tib  Max iops: 16000  (Genral purpose) SSD
+provisioned IOPS (SSD)                         - io1 (API name)     volume size: 4gb - 16 gb   max iops :64000 (Databases) mission critical SSD
+throughput optimised hard disk drive(low cost) - st1        : 500gb-16tb     :500  (big data & data warehouse)Freq access data and low cst Hdd
+COLD hdd                                       - sc1          500gb-16tb     :250   (File servers) lowest cost and less feq access HDD
+magnetic                                       - standard     1gb-1tb        :40-200  (data is Infreq Accessed) HDD 
+
+#############################################################
+EBS volumes and snapshots
+**************
+Ec2 instance and volume should be in same availablity zone .
+
+Create a instance with 4 different EBS volume (except provisoned iops)
+To extend the volume we have to click action and modify volume and enter the size that we need , and then we have to login to the server and extend it the volume that we create newly-allocated space
+
+two commands to extend the added space
+
+lsblk  -> check whether the additional storage is added
+
+[root@ip-172-31-47-80 ec2-user]# lsblk
+NAME    MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+xvda    202:0    0  10G  0 disk
+└─xvda1 202:1    0   8G  0 part /
+
+
+sudo growpart /dev/xvda 1   ----- xvda is volume name and 1 is first partition 
+
+[root@ip-172-31-47-80 ec2-user]# lsblk
+NAME    MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+xvda    202:0    0  10G  0 disk
+└─xvda1 202:1    0  10G  0 part /
+
+now it is added to xvda1 . but when we check the output in df -h it will not be added for that we have to extend the file system
+
+xfs_growfs -d /   -- once this command executed now root partition has the extra volume that added
+
+
+We can also change the EBS volume type from gp2 to io1 in the modify volume option , no need to stop the instance or anything 
+
+Moving EBS from one region to another  ( we are  using root volume to do this )
+Choose the volume and -> action -> create snapshot  (snapshot created succefully , it is nothing but complete copy of your volume) snapshots exits on s3 . 
+We can look on the snapshot module to check the snapshot that we created
+Once created snapshot , again choose the snapshot and click action and choose "Create image from EBS snapshot"  in that we have to choose the virtualization type "hardware-assisted virtualization" . and click create . once created then we can able to use that image to create a new Ec2 instance
+
+Note :There are two types of virtualization one is "hardware-assisted virtualization" and other is paravirtual (PV)  - study deeply
+In PV - will not allow us to choose many instance type ,only few or one 
+in HVM - we will get many instance type that we can choose we wish
+
+
+The created images will be list in AMIs module . Choose the Image and click launch which will direct to create instance  and while choosing choose the different zone in subnet option  . so that instance is lanched in that Availablity zone
+
+AVailablity zone -> is nothing but us-east-1 us-east-1a like that
+Region -> london , north verginia like that
+  
+We can also copy the AMI from our default region (NV region ) to different region like london and then we can create the instance there 
+Go the custom ami that you created and action -> copy -> select the region that you want to make a copy of that AMI.
+
+By doing this way we can move our ec2 instance from one region to other region by taking sanpshot and converting as AMI and moving that AMI to other region and make the ec2 on that region
+
+***********************************************************************************************************************************************************************
+Moving EBS from one AZ to other AZ --> take snapshot --> from snapshot create volume  create the volume in the zone that you needed -- but in this we cant move to one region to other region
+
+IF we have to move EBS to other region , move the snapshot to other region and then create a volume from there 
+********************************************************************************************************************************************************************************
+Copying snapshot from one region to another region:
+********************************************************
+Go to the volume where your EBS snapshot resides.
+Select the EBS snapshot you want to copy to another region and then click on the Copy Snapshot button.
+Put a name and description on the EBS snapshot you want to copy to another region and then select the region you want to copy it to.
+*********************************************************************************************************************************************************************************
+Copyiing snapshot from one account to another account :
+
+We cannot copyy the snapshot that are encrypted with default KMS key.  But we can do by changing the key from defafult to custom and them copyting to another account
+To change the default kmskey -> choose the snapshot and copy (while copy option choose different key for encryption) and once copy completed -- we used the key from encryption key from IAM
+Choose the copied snapshot and choose modify permission and give the account ID (which you need to share) 
+Now we need to share the encryption key to the other account -> go to IAM -> encryption key - > choose the key that you used -> "OTHER AWS account" option enter the  other aws account id
+
+Now we can see both KMS key and snpashot in another aws account 
+To avoid dependencies from source account.  choose the shared snapshot and click copy and choose your own kms key again and copy it. so that it will be in your account. 
+***********************************************************************************************************************************************
+	
+Delet the snapshot once used ( it will charge)
+
+Snapshots are incremental - this means that only the blocks that have changed will be updated in your last snapshot 
+#############################################################################
+EBS vs instance store
+***************************
+
+All AMI are categorized as either by Amazon EBS or instanse store
+
+EBS volume  : The root device for an instance is lanched from the AMI  (amazone EBS volume) created from an amazson EBS snapshot(we normally use this one)
+Instance store volume : The root device for an instance launched from the AMI in "instance store volume", created from a template stored in amazon s3  (once added to the ec2 we cant add extra volume in instance store volume and also we cannot stop or start the instance state on this storage type only reboot option and terminate). If the host fails you will loose our data . reboot doesnot loose the data . When terminating the instance for this type of storage the root device volume also delete automatically, and we cant keep that .
+
+Instance store volumes are sometimes called Ephemeral storage
+
+TO lanch the instance in instancce storgae , choose the custome ami and in that there will be option called instance store , select the option from that choose the ami that you wanted. 
+Once the ec2 is lanched you cannot see the storage in volume (like EBS) . 
+
+######################################################################
+
+ENI vs ENA vs EFA  
+
+ENI :Elastic network interface : its a virtual network card (when we provision an ec2 it will add automatically ) it is used for basic networking
+
+EN : Enhanced Networking -> uses single root i/o virtualization (SR-IOV) to provide high-performance networking capabilities on instance types
+Its just used for speeding up our network essentially , no additional cost we can add it on ec2 instance( only supported ec2 instance) 
+when you need speeds between 10gbps and 1000gbps you canuse EN 
+Enhanced networking can be enabled using:
+
+      ENA : Elastic network adapter  which supports network speeds of up to 100 GBPS for supported instance types
+	  or
+	  Intel 82599 Virtual function (VF)interface - which supports network speeds of up to 10 gbps for supported instance types  ( used for older instances)
+	  
+   
+EFA : Elastic Fabric Adapter - A network device that you can attach to your ec2 instance to accelerate high performance computing(HPC) and machine learning applications.
+
+If you need to do an os by-pass , or HPC or Machine learning  what network adaptor you want to choose ( choose EFA)
+
+##################################################
+Encrypted root device volumes and snaphosts
+******************************************
+
+*While creating a ec2 instance in storage option we can choose the root volume as encrypt and then we can create a instance
+* If the ec2 instance is already created with unencrypted root volume and now if we have to make it encrypted then follow the below steps
+
+Create a snapshot of unencrypted volume and then go to snapshot section and make a copy of that same snapshot . while making a copy we can encrypt that snapshot there will be a option while copying the snapshot ( action -> copy ) . once the copy snapshot (encrypted) is created we can use that copysnapshot and create a AMI and with that ami we can  create an instance.
+
+TIPS :
+*If we are taking a snapshot of encrypted volumes then it will be also a encrypted snapshot
+*We can share snapshots, but only if they are unecrypted, and also we can be shared with other aws accounts or made public  but it should be unecrypted
+* you can encrypt the root device volume upon creation of the EC2 instance ( while starting itself we can encrypt the root volume)
+
+############################################################
+Spot instances and spot fleets
+********************************
+
+Spot instances let you take advantage of unused ec2 capacity in the aws cloud. it is available at upto a 90% discount compared to on-demand prices. We can use the spot instance for flexible application such as bigdata, and other test and development workloads
+
+To use spot instances, you must first decide on your maximum spot price. The instance will be provisioned so long as the spot price is below your maximum spot price . The spot price varies depending on capacity and region 
+
+IF spot price goes above your maximum , you have 2 min to choose whether to terminate or not the instance
+
+SPOT BLOCK : It is use to stop the instances form being terminated even if the spot price goes over your max spot price. You can set spot blocks for between one to six hours currently
+
+Usecase for spot instance : bigdata , ci/cd and testing , web services, image and media rendering
+
+Spot instance can be done in two way 1) one-time 2) persistent . 
+One-time  : Once the bid price is increased above your max price then it will be terminated 
+Persistent : if the bid price is increased abover your max price it will be disabled and once the bid price decressed it will create a instance again
+
+Spot fleet : Spot fleet has collection of spot instances and optionally on-demand instances . for eg : IF we request a no of servers in spot fleet to create , it will used to create the spot instances to full fill your request but in case if it cant create no of instances that you mentioned with spot instances then it will go for on-demand instance and create the remaining instance and full fill your request.
+##############################################################################
+Hibernate : if we hibernate the system , THe RAM content(memory) are stored in root volume, so that once we start the system again it will load the ram content from the volume and all the previous task will be there 
+
+While creating the instance we can select the hibernet options to include while create the instance "configure instance module" . and also the root volume must be encrypted to use this option 
+
+#####################################################################
+Cloud Watch:  it will watch performance
+
+we can use cloud watch for - > ec2 instance, autoscaling groups, ELB , Route 53 healthccheck , EBS volumes , cloud front 
+
+IN EC2 instance it will monitor host level metrics like CPU , RAM , Network, DISK, status check.
+
+It is used to monitor our AWS resources as well as the application that runs on AWS  ( cpu ram network , volumes etc)
+
+Cloud trail:   It will monitor the API calls in the Aws platform  ( aws console actions and API calls that made in console ) 
+
+It shows the user and resource activity by recording aws management console actions and API calls . YOu can identify which users and accounts called the aws, the source IP address from which the calls are made and when the calls are occured 
+
+
+cloud watch is used for monitoring, alerting, reporting ,logging , cost optimization . we can also create custom metrics and monitor . 
+We can also monitor lambda function, cost optimization (Monitor resources such as EC2 instances, RDS databases, and S3 storage to track underutilization or over-provisioning, which can lead to cost savings) , application monitoring ( Monitor custom application metrics such as response time, user requests, or database queries to ensure service reliability.)
+
+there are over 1100 + aws metrics are available in cloud watch , in that we can create custom metrics also according to our needs. 
+
+CloudWatch Events (now known as EventBridge) allows users to respond to state changes in AWS resources. For example, when an EC2 instance is terminated, CloudWatch can trigger an event to notify administrators or invoke specific actions.
+
+CloudWatch Dashboards are customizable, graphical views that display metrics and logs. These dashboards can be used to create real-time visualizations for monitoring AWS resources and applications.
+
+
+CloudWatch Alarms:
+
+Alarms allow users to set thresholds on CloudWatch metrics to receive notifications or trigger actions automatically. For example, you can set an alarm to send an email notification when CPU utilization exceeds 80% for a particular EC2 instance.
+Alarms can also trigger actions such as auto-scaling an EC2 instance, invoking an AWS Lambda function, or publishing a message to an SNS topic.	
+
+
+A Log Group is a container for log streams in Amazon CloudWatch Logs. It’s a way to organize and manage logs in a hierarchical structure. Each log group can contain multiple log streams, and each log stream holds the actual log events generated by AWS services or your applications.
+
+
+Log Group: Think of it as a folder that holds your log files.
+Log Stream: Inside each log group, you have individual logs (like files), each containing log entries (events).
+
+Imagine you have an application running on multiple EC2 instances. You might have a log group named MyApp-Logs and create a log stream for each EC2 instance, like EC2-Instance-1 or EC2-Instance-2.
+This allows you to easily organize the logs from different sources (such as different EC2 instances) into one logical group, but still keep them separate and manageable.
+
+CloudWatch Logs Insights is a powerful query feature in Amazon CloudWatch that allows you to interactively explore and analyze the logs stored in your CloudWatch log groups. Using SQL-like queries, you can quickly search through large volumes of log data to identify patterns, troubleshoot issues, or gain operational insights.
+
+You write queries to filter and aggregate the data from your logs. This can help you find specific events, errors, or trends within your logs.
+
+Example:
+Let’s say you have logs from an application that records HTTP requests, and you want to analyze errors (e.g., HTTP status code 500). You could run a query in CloudWatch Logs Insights to search for all logs where the status code equals 500, to find out when and why the errors happened.
+####################################################################
+Cloud watch LAB :
+
+While creating a instance we can choose the monitoring enabled with detailed monitoring . But it will cost
+
+We can create a alarm by get into the cloudwatch module and choose alaram and choose the instance and choose the metrics that you want to set an alarm and entry the email id that you want the notification 
+
+while true; do echo; done  -> this script will increase your cpu utilization 
+
+
+standard monitoring - 5 minutes | detailed monitoring - 1 Min interval 
+
+We can also create dashboard to see what is happening with your aws environment
+###############################################################
+Aws command line
+******************
+
+IF you loose secret acces key an access key we can go to the user go to security credentials and incactive  the old acessskey and create a newone
+
+
+The secret key and access key is for IAM user. LIke you can use this by access the s3 bucket through the instance
+
+"aws configure" and then enter the details, once done we can list our the objects in s3 buckte by "aws s3 ls" ( the buckets thats are in the region)
+
+We can also create a bucket through command line:
+
+aws s3 mb s3://"bucketname"   : mb is make bucket and also bucket name should be unique
+
+Note : go to cd~ (home directory )and ls ( no files will be there ) but there is hidden directly .aws  in that your accesskey and secret key are stored ( it is security risk)  do not store your keys anywhere  .  To avoid these we can use roles which wil be learn further
+
+#####################################################################
+IAM roles : LAB 
+
+Go to IAM -> Roles -> Create a role -> choose the service that should be using this role ( choose EC2 --> ec2 will be using this role) -> now need to attach policy (give admin access policy ) --> and mention rolename( give any name that you want to keep for this role) --> create role.  role created. 
+
+Need to attach the created role to EC2 instance . Choose the ec2 instance and action -> attach/replace role -> choose the created role 
+
+
+Service -> EC2   role -> Admin acess  .  So using any Ec2 instance we can access anything through command line . but we have to choose  which EC2 instance have to get full acess by folling below action ( IF there is any directory like .aws in home directory before delete it )
+
+Choose the EC2 -> action -> instance settings > attach/replace IAM role -> and attach admin access role
+
+Now go to ec2 instance and type aws s3 ls , it will list the bucket without giving key  ( without giving key we can acces it )
+
+roles are univeral we can use it any region . While creating a EC2 instance itself we can give IAM role access
+
+#################################################################
+Using Boot strp scitpts - LAB   automation while  aws ec2 deployment , we can install software and update using commands and save in the box 
+
+While creating instance - in congigure instance module there will be adavanced details box in that box we can give some commands like install update , install http , so that while instance are creating these commands will execute too and install whatever given in that 
+
+#!/bin/bash
+yum update -y
+yum install httpd -y
+service httpd start
+chkconfig httpd on  ( will check if appache is stopped or not , if stopped it will start automatically )
+cd /var/www/html
+echo "<html><h1>hello</h1></html>" > index.html
+aws s3 mb s3://bucketname 
+aws s3 cp index.html s3://bucketname
+
+and then create a instance once instance created dont need to go inside the ec2 instance we can directly type the ip in address bar it will open the webpage 
+
+####################################################################################
+Instance Meta data : LAb
+
+Go to ec2 instance and we can get the details of commands that we run on the bootstrap  . The IP give below is general .
+
+curl http://169.254.169.254/latest/user-data/  ->  While creating ec2 the given user data information can be acccessed here . It will show the "userdata" commands that we given while creating EC2 instance.
+curl http://169.254.169.254/latest/meta-data/  ->  it will give all the option to which we want information ,like pubic-ipv4, private ip, etc . we can use below command for public ipv4
+curl http://169.254.169.254/latest/meta-data/public-ipv4  -> it will give the details  ( so in meta deta all the information will stored)
+
+##############################################################################
+EFS - LAB  - Elastic file system - file storage system  . it is simular to EBS (where EBS can be mount only one istances , but we can share EFS volume to multiple system ) . In this storage capacit is elastic, growing and shrinking automatically as you add and remove files, so your application  have the storage they need, when they need it
+
+EFS is within the region and for all the availablity zone
+
+Here is the eg what we going to do . create a EFS  with default(everything)  and then create a 2 instances with bootstrap scripts below
+
+#!/bin/bash
+yum update -y
+yum install httpd -y
+service httpd start
+chkconfig httpd on 
+yum install -y amazon-efs-utils
+
+and add them to security group which ever you uses like "web dmz" and launch the instance
+Go to the security group and choose the default security group  one which we provisioned the EFS in that . so choose the default and remove the NFS which is created before and reenter the NFS and  in the custom field choose your existing security group "web-dmz" in which you created the ec2 instance 
+
+Go to one server and go to cd /var/www/  and then go to EFS and choose the EFS that you created and click the mount instructions   and you will get the list of instruction in that choose the below one 
+
+choose the encrytion command and paste this on the server - sudo mount -t efs -0 tls fs-9816b2269:/ /var/www/html  ( do the same in the next server )
+
+So what ever changes made in html direct it will reflect in the other instance also.
+
+###################################################################################
+Amazon fsx for windows and amazon fsx for lustre
+***********************************************
+
+Amazon fsx for windows   --> nothing but windows file server (centralised storage for windows based and windows based app )
+
+#A managed windows server that runs SMB based file services   SMB(server message block) but efs is not smb based it is NFS . So we cannot connect this on linux system
+
+#It is designed for windows and windows application . Supports AD, ACL , and secutiry polices etc
+
+
+IF we processing large data sets and if we need high IOPS like machine learning we can use the Amazon fsx for Lustre. it will store the data directly on s3
+
+##################################################################
+Ec2 placement groups   - 3 types   
+*************************
+Cluster placement :  Grouping of instances within a single availablity zone.  this group recommended for applications that need low netwrok latency and high network throughput or both . This group cannot be in mulitple availablity zone
+
+Use cases : If these instances are close to each other so there will be low latency and high network throughput
+
+Spread placement group :  Group of instances that are placed in different hardware.  where each instance are seprate from each hardware so that if one hardware failes the other one will work  ( small no of instances) , This group can be in mulitple availablity zone in same region
+Only 7 running instances per availablity zone
+
+Partition placement group : It is simalar to spread placement and it has partition group , it will seprate into 3 partiton group each group have multiple instances, where three partition group is isolated to each other. The name should be unique for placement group. this is used for large number of instances. and also  certain type of instances can be lanched in this like "compute optimzed, GPU, memory optimized and storage optimized  . This group can be in mulitple availablity zone in same region
+
+You can also move an existing instance into a placement group but while moving it should be in stopped state . and also we can remove the instance from placement group by using aaws cli but not by console
+
+#####################################################################################
+
+HPC on AWS  - High performace compute on aws
+**************
+
+AWS direct connect -> It will establish a dedicated network connection from your premises to aws, which will be private connectivity  and also it will reduce your network cost, increase badnwidth, provide more network consistency.  Through this we can transfer the data which is one type of data transfer like snowball, aws data sync 
+
+
+HPC on compute and netwroking:
+
+Ec2 instanses that are GPU or CPU optimize  ( which will give HPC)
+EC2 fleets (spot instances or spot fleet)   which will give HPC
+Placement groups
+Enhanced networking (SR-IOV)
+EFA
+
+Storge :
+
+EBS : scale up to 64000 IPS 
+Instance store : scale to millions of IOPS ; low latency
+
+Network :
+
+s3 : object based storage; not a file system
+EFS : scale IOPS based on total size
+Amazon fsx for lustre
+
+#####################################################################
+
+AWS WAF : web application firewall like which IP addrss can allow, which string can allow the req  and which region can allow 
+
+AWS waf allows 3 different behaviours:
+
+Allow all requests except the one you specifty 2) block all request except the ones you specify 
+3) count the requests that match the properties you specify
+
+Exrra protection against web attacks  using conditions you specify . You can define conditions by below
+
+IP address that requests comes from
+Country that requests are comimg from
+values in request headers
+String that appear in request
+Lenght of request
+presence of sql code that is likely to be malicious ( known as sql injection)
+
+SO above are the things were WAF can allow or denied the request
+
+
+Mostly WAF is used of DDOS attac
+WAF can be set before cloudfront or LB .  From Route 53 normally the request will reach to cloud front or LB . In this we going to place the WAF in cloud front.  While creating cloudfront we can mention the WAF , or also we can create a WAF seperately and attach with cloud front.
+
+there will be default amazons rule, where we can add them to WAF, or we can create a set of custom rule by ourself and add them to waf.
+If we have to block or allow specifc ip in particular region. Then go to IPSET and choose the region and enter the IP list and choose allow or deny
+once the IPSET is created , go to rule and create a rule and in that rule choose ipset that we created . and add that rule in wAF
+IN the rule we can choose IPSET , Headers and extra protection whatever we nneeded.
+
+#############################################################################################
+
+Database:   Relational database
+
+6types : sql,mysql,postgresql , oracle, mariadb,Aurora(amazaon owned)
+
+RDS has two key features
+
+# Multi-AZ  : Its for disaster recovery  (failover)
+
+IF primary db failes it will automaticall point to secondary database . Db has a Domain URL  which we can used to connect the app to the db , The URL points to both primary and secondary . IF primary failes the secondary will be online and automatically point to that URL ( LIKE LB)
+
+#Read replicas : For performance  (sharing load)
+
+Its nothing the primary DB will replicate the datas to secondary DB but it is read only . IF the primary DB gets no of requests and it will share the load to secondary DB .  In this the URL points only to primary DB , IF the primary DB failed then it will not automaticlly switch to other (failover is not done here ) so in that case we have to create a new connection (URL) and point the app to secondary db one which is read only .  we can use this case in blogs because most of these are used for read . we can have maximum 5 replica copies 
+
+Dynamo DB : No sql ( amazon properity)
+
+RED shift : Its database warehousing - for eg: in this query will be more complicated and more querys are run on this.  its amazon properity
+
+Elastic cache : It will cache the data so that next time it will not go to database for the information it will use the cache
+
+
+
+####################################################################
+Creating an RDS Instance :
+
+
+
+we cannot able to ssh RDS like we do ec2 . And also we cant able to patch RDS its amazaon responsiblity to patch the os and DB . Rds is runs on virtual machine , its not serverless . But we canat able to access it but amazon can .  Aurora alone serverless in RDS group. All others are server(virutual machine)
+
+
+#####################################################################
+Backup , mutliaz, read relplicas -  RDS
+
+Automated backups  - It will take the back up and put it on s3 bucket with the timings we mentioned and also while doing this automated backups it will suspend the storage iops so that we will have some latency 
+
+Database snapshot : Its taken by us manually . Even if we delete thE rds the snapshot will be available unlike automated backup
+
+
+If we delete RDs and trying to restore it through backup, we will get a newly created RDS with different endpoint not as same the previous one. but datas all be present as pervious one . In this case we have to apply the new endpoint in ec2 server by removing the old
+
+Multi-AZ : In this we have database which will replicate all the things to another DB in different region . SO if the main db fails or the region failes, it will be automatically connect to the standby DB (other one ) without any admin intervention . the replication will be done by amazon .Multi-az is only for disaster recovery it cannot be used as primary . 
+To performance improvement you need read replicas .
+
+
+In exam they ask how will you improve the performace - > WE can add read replicas which wil allow you to have a read-only copy of your production database and which will also share the workload . We can have mulitple read replicas server connect with one production server which will share the workload ,but in the case of multi-az it is used for onlyh DR. you can force a failover from one az to aonother by rebooting the RDS instance.
+
+
+Things to know about read replicas :
+
+It is used for scaling, not for DR 
+Must have automatic backups turned on in ourder to deploy a read replica, and we can have upto 5 read replicas of any database
+We can have read replicas of read replicas
+Each read replica wil have its Own DNS end point, read replicas can be promoted as own database( seperate database) so that it breaks the replications with primary one. And also we have read replica in second region
+
+############################################################################################
+RDS - Backups, multi-az and read replicas - LAB
+
+Multi-AZ : i To enable the Mutli-az in previous created database , we can choose the database and click modify and tick mark the multi-az and apply
+If you do this it will  create a another database and replicate the content. while doing this we will face performace issue while replicating the datas, so we can do this on sechudeled timings, which we can also set the timings for this. 
+
+Once it is created, We have options like , if we have to rebbot the db we have a option called reboot with failover, this means while rebooting it will switch to secondary databse. ( its changing one availablity zone to another AZ )
+
+Read replica : In oder to enable read replica we have to turn on the back up, without backup turn on readrelipica option will be greyout .  
+
+To enable backup , click the databse and click modfiy and turn on the back up  ( It will also affect the performace impact )
+Once done click action and click create read replica. and choose the destination region. So it will create a another db in the name of replica.
+
+Once it is done , click the replica DB and click action and click promote read replica (this is make this replica to master )  -> once we done this, we can create replica for firstly created replica.
+ 
+Note : In multi az it is not list the DB that we created, but in the read replicat it  listed the Db . Check in details about this
+
+Mutli AZ is used for DR, You can force a failover from one AZ to aonother by rebooting the RDS instance.  ( Got that point )
+
+#################################################################################
+Dynamo DB - > Its apposite of RDS, its not amazon 
+
+Stored on ssd storage
+
+Spread across 3 geographically distinct data centers
+
+Eventual consistent read : All the copies of data is usually reached within a second from the application , But it will take a few seconds to return the updated data ( Best read performce) it is default
+
+Strong consistent read : Once the data is updated in db it can be accessible withing a second or less. 
+
+Set up wil cover is serverless section (upcoming sessions videos)
+`				
+########################################################################
+Aurora - Aws database
+
+# 2 copies of your data are contained in each availablity zone, with minimum of 3 availablity zones.  so totally 6 copies of your data
+# You care share Aurora snapshots with other AWS accounts
+# 3 types of replicas available , Aurora replicas ( we can have upto 15 replicas), mysql replicas ( 5) and postgresql replicas (1) .Automated failover is only available with Aurora replicas , We can also take snaphots, which will not impact the performace like others
+# Aurora has automated backups turned on by default. And also it is serverless database and if you want a simple, cost-effection option for infrequent , intermittent, or unpredictable workloads
+
+
+Migrating Msql to Aurora
+
+Click on Action and choose  aurora read replica.  We migrating using read replica concept. once aurora read repllica created we can make this as a master ( your ec2 will be connected from mysql to aurora replica) by clicking "promote read replica" option 
+
+##############################################################
+Elasticache -  it is used to increase database and web application performace
+
+This services improves the performance of web applications by allowing to retrieve information from in-memory caches instead of relying entirely on databse . which wil be fast in performace 
+
+In exam if they ask what step will you take if your databse is overload -  1) create read replica and point your reads to read replica and other one is using elasticache
+
+#####################################################################################
+Database Migration service (DMS ) :
+
+Aws DMS (used for migration which will convert the database like msql to auroro etc..) is a server in the AWS cloud that runs replication software .we can specify the source and target connection to tell AWS DMS to migrate the database. it will also use SCT (schema convertion tool for migration )
+
+AWS DMS is nothing but which will convert the database( migration ) from source to target . it will convert the datas and replicate them to target.
+
+Diffent types of migration :
+
+Homogenous migration  : From oracle -> oracle  from onpermises to aws  ( we dont need SCT because we migration oracle to oracle )
+Hetrogenous migration : from sql server -> aurora   , it will use DMS , SCT ( schema convertion tool ) ( we need SCT because source and target DBs are different, and we are converting )
+
+#########################################################
+Caching serives :
+
+cloud front, api gateway, elastic cache , Dynamo DB accelerator (DAX )
+############################################################
+EMR : Elastic MAP reduce (cluster)  ----nott need
+
+It is used for big data processing, consists of a master node, a core node, and optionally a task node. By default log data is stored on the master node ( in case if master node gone all the logs will be gone in that case ), you can configure replication to s3 on 5 min intervals for all log data from the masternode ( copying logs from master to s3) however this can be only configured when creating the cluster for the first time.
+
+##############################################################################################
+AWS directory service :
+there are two types, one is AD Connector and other one is "AWS Managed Microsoft AD".  these are only ad services, but dosent mean this is used for login the aws console, but with the help of this service we can use the sso and then we can able to login with our aws. combination of both only we can able to logi with aws console. 
+Use AWS Managed Microsoft AD or AD Connector to integrate your on-premises Active Directory with AWS.
+
+
+AD Connector:
+
+AD Connector allows AWS resources to authenticate directly against your on-premises Active Directory without storing user credentials in AWS. It works as a bridge between AWS and your existing on-premises AD, enabling hybrid authentication.
+
+
+AWS Managed Microsoft AD
+
+This is the AD service for aws, where we can create this service and sync our on-premises AD with this , or else we can use this separately in your aws. while creation itself we can configure trust relationship with our onpremises ad, so that on-premises users can access the aws services using their credentials. this doesn't mean all the userdata wil be sync to aws, this process is just for authentication . when on-premsis user trying to access aws services it will be authenticated in the on-premisses and then that user can access in the aws, so this is trust relation between on-prem and aws. 
+we have to add the services in the aws ad, so then only the services can be accessed by on-prem users. Genrally any user its belongs to on-prem or the aws ad, if want to access any services ,that services should be enabled in the AWS managed Microsoft ad. 
+
+AWS Managed Microsoft AD, the AD environment is fully managed and hosted in AWS, but it doesn't mean that it migrates your entire on-premises Active Directory to AWS. Instead, it creates a new, separate Active Directory instance in AWS with our on-premisis data. 	
+
+
+
+Step 1: Set Up AWS Directory Service
+You need to set up AWS Directory Service to connect your AWS environment to your Active Directory.
+
+Option 1: AWS Managed Microsoft AD (Recommended for fully managed AD in AWS)
+Log in to the AWS Management Console and go to the Directory Service dashboard.
+Choose Set up directory and select AWS Managed Microsoft AD.
+Provide Directory Details:
+Directory DNS name: Choose a name, e.g., corp.example.com.
+Directory NetBIOS name: Shorter name for your AD (e.g., CORP).
+Admin password: Create a password for the AD administrator.
+VPC Configuration:
+Select the VPC where your directory will be deployed (make sure the VPC has the necessary network configurations for AD to work).
+Review and Create: Review the configuration and click Create directory.
+
+ONCE DONE, we have to enable trust relation ship , thenonly on-prem users can be authenticated. 
+
+
+Option 2: AD Connector (If you want to use your on-premises AD)
+In the Directory Service dashboard, click Set up directory and choose AD Connector.
+Provide Directory Details:
+Directory name: Choose a name for the directory.
+Directory type: Select the type (e.g., Active Directory).
+On-premises AD details: Enter the on-premises AD details like DNS IPs, NetBIOS name, and AD administrator credentials.
+VPC Configuration: Select the VPC and subnets where the AD Connector should be set up.
+Review and Create: Review and create the directory.
+
+
+NOTE:  The on-premises AD is the source of authentication (since AD Connector is essentially a bridge between AWS and on-premises AD).
+
+all the authentication is done in on-prem only.
+
+*****************************************************************************************************
+Solution for Console Access (AWS SSO or SAML Federation):
+
+ To log in to the AWS Management Console using your Active Directory credentials, you would need to set up AWS Single Sign-On (SSO) or use SAML (Security Assertion Markup Language) federation.
+
+AWS Single Sign-On (SSO) can integrate with AD Connector or AWS Managed Microsoft AD, allowing users to log in to the AWS Console using their Active Directory credentials.
+
+SAML Federation allows you to configure a SAML 2.0 connection between your on-premises AD and AWS, which would allow users to log into the AWS Management Console using their AD credentials.
+
+Step-by-Step Solution (Using AWS SSO):
+Set up AWS SSO in the AWS Management Console.
+Choose Active Directory as the identity source (this can be AWS Managed Microsoft AD or AD Connector).
+Assign IAM roles to the users/groups from your Active Directory.
+Enable Console access and provide users with access to specific AWS resources.
+
+
+REAL TIME CHECKED FOR SSO SIGN IN FOR AWS CONSOLE> 
+
+Enable AWS IAM Identity Center  -- go and enable it IAM IDENTITY CENTER
+Connect Your Active Directory ---  we have to choose our AD on-prem   ( which is already connected using aws managed AD or ad connector , so it will list)
+Create an IAM Role for SSO
+Assign Permissions to AD Users
+And then we can access Access AWS Management Console
+
+
+
+SYNC BETWEEN ON_PREM AND AWS (if new usercreated in ad, it will sync to aws )
+
+To synchronize your on-premises Active Directory (AD) with AWS Managed Microsoft AD, you can use the AD Connector or AWS Directory Service for Microsoft Active Directory (AWS Managed Microsoft AD) with AD Replication. Here’s how you can set it up:
+
+Using AWS Managed Microsoft AD with AD Replication
+Set Up Trust Relationship:
+Ensure you have a trust relationship established between your on-premises AD and AWS Managed Microsoft AD. This allows the two directories to communicate and share information.
+
+Enable AD Replication:
+AWS Managed Microsoft AD supports multi-region replication. You can configure your on-premises AD to replicate with AWS Managed Microsoft AD.
+
+
+#############################################################
+IAM policies :
+
+Amazon resource NAME ( ARN )
+
+Arn all begin with :  arn:partition:service:region:account_id
+And end with :
+Resource
+Resource_type/resoure
+resource_type/resource/qualifier
+resource_type/resource:qualifier
+resource_type:resource
+resource_type:resource:qualifier
+
+Example :
+
+arn:aws:iam::12345678:user/mark    -> resource type - user ; resource - mark (since its IAM we are omiting the region because its glbl servce)
+arn:aws:s3:::my_awesome_bucket/image.png ( we omiting the account id here because fr s3 no account id only unique name)
+arn:aws:dynamodb:us-east-1:123455444:table/orders
+awn:aws:ec2:us-east-1:1231423:instance/* ( all ec2 instance in that region )
+
+A policy is a json doccument , we have two types
+Identity policy  : permissions for users, groups  
+Resource policy  : permission for resources like s3 bucket , kms, . We can specify who has acess the resource and what action they peform on it
+
+Policy structure : its a list of statement
+
+each statement will call API request, for eg ( if we create a statment to create a ec2 instance it will complete through api request)
+
+sid : it is used to tell what the statement is for ( for wat we created this policy)
+Effect : allow or deny
+Action : service:action name  
+resource : allows/dny  all the action on the particular resource (table) (mention the resouce which we need to do the action )>
+
+IAM POLICY is a JSON doccument that defines permissions. 
+
+Two types of policy :
+Aws managed policy and customer managed policy . Aws managed policy is default created by aws which will be in orange box icon which we canot edit .
+
+JSON script for (listing object in s3 bucket and allowing to put , get ,delete object on s3 bucket in specific folder)
+
+{
+ "version": "2012-10-12",
+ "statement":[
+   {
+     "Effect": "Allow",
+	 "Action": ["s3:ListBucket"],
+	 "Resource" ["arn:aws:s3:::test"]    -here test is bucket name
+   },
+   { 
+     "Effect": "Allow",
+	 "Action":[
+	   "s3:PutObject",
+	   "s3:GetObject",
+	   "s3:DeleteObject"
+	  ],
+	  "Resource": ["arn:aws:s3:::test/*"]    - It means we can put, delet and create object inside the test s3 bucket
+   }  
+  ]	 
+ }
+
+Once we created the policy , we have to attach to the roles, create a new role, we want to allow ec2 istance access to s3 bucket with new created polices, choose the aws service , ec2 choose, select permisstion ,and choose the policy that we created. 
+
+If we allow to access s3 bucket in policiy , and create another policy to deniy s3 bucket, it will choose the deny.z
+
+Permission boundary :   If an IAM user has full administrator acess policy , and we want him to have only full access for dynomodb alone then we can use permission boundary option and choose the dynomodb acess alone . eventhough he has admin acess policy we mentioned to allow only dynamodb acess in permison bounday . So no other acess he can have
+
+#####################################################################################################
+
+AWS resources access manager (RAM):  https://www.youtube.com/watch?v=Oo1C0pDrDxI
+
+We can share resources from one account to another account , like we can share aruora db  frome one account to another account by using RAM,
+
+Go to RAM console and create a resource share , and choose the resourse type and choose the DB name and give the another account id to share 
+Once done we have to go to account to and accept the invite and then we can see the DB is shared . from that we can clone the db and we can use.
+
+
+IF the two accountts are linked with organisation then invite and accept will not ask, it willl directly share
+
+###########################################################################################
+
+DNS - Route 53
+
+SOA , NS records, A records, cnames , mx records (mail ), PtR records (reverse of A records domain name -> ip )
+
+NS - Name server records : They are used by top level domain servers to direct traffic to the DNS server which contains the authoritative dns record :
+
+hellogurus2019.com  -> .com (top level) which will check the ns record for this domain and transfer the requested to ns records -> NS records -> SOA (start of authority) which has all the IPS 
+   
+A record -> stands for address  -> Name to Ip address   (google.com -> 123.23.23.23)
+Cname -> Canonical name -> which can be used as another domain name . one IP has two domain name(two url)
+
+Elb do not have pre-defined ipv4 address, you resolve them using a dns name
+
+We can also buy domain name directly with AWS . itt will take upto 3 days to reflect . mostly will be done within a hour or 2 hour
+##################################################
+Routing polices available on  AWS
+
+simple routing , weighted routing , latency-based routing , failover routing, Geolocation routing, Geopromixity routing (traffic flow only),multivalue answer routing 
+
+Simple routing policy :
+
+In simple routing policy we can have only one record with mulitple IP address
+
+We have to create 3 instance with different region (nv , ohio, etc) with http enable with site named with region name to easily understand
+
+#!/bin/bash
+yum update -y
+yum install httpd -y
+chkconfig httpd on
+service httpd start
+cd /var/www/html
+echo "<html><h1>Hello Cloud Gurus! This is the X Web Server</h1></html>" > index.html
+
+in x we can mention the region name for each instance . so that we can find which region the page is accessig from
+
+Once done with instance creation and domain creation in aws . choose our domain that created and click option " create record sets " and in side column enter the 3 ip address in value fileds . so once done we can use the domain name to check the site whether the site is opening and from whch region it is accessing . once the site is accessed from ohio it will show "Hello Cloud Gurus! This is the Ohio Web Server" even if we refresh the page it will show the same content because the browser cached the content . so we can go and change the TTL value to 1min then it will remove the cache for 1min and then we can get the result from three diff region . the ttl value can change in same filed where we entereed the 3 ips value to store in dns . 
+To reflect the changes immedietly we can do flus dns instead of waiting for ttl for clearing cache in dns.
+
+
+
+
+Weighted routing policy: split up the traffic to differen region
+***************************
+We can set weight to each ip address , like 30 % of traffic will goes to this ip adreess and 50% of traffic goes to this ip address like that.
+
+First we can delete the old record sets and create a new one by giving ip address one by one , and setting the routing poicy to wighted and giving the weitage value . so we have to create 3 different records for each ip address and give them a weight value. We can give "set id" value as region name like sydney
+
+We can also set health check for each IP address , go to health check column and create a health check and enter the details . create 3 healthcheck for 3 IP address . IF one fails it will automatically removes from route53 untill it healthcheck  pass. we have to check box the healthcheck while creating the records to apply this option.we can also get healthcheck notification.
+
+Name - give region name like sydney, ohio
+IP  - enter the sydney IP 
+Hostname - Domain name (Url)  hellocloudguru2019.com
+path - Index.html
+
+
+latency-based routing
+********************
+
+It  will send the query to near by region and get the output . If we are in australia then it will send the request the to sydney and get the result. so whichever the site is near it will get the output from that.
+
+remove the previous records . create a new record for each IP . and change the policy to latency-based, region will take automaticcally, set id to region name , and enable the healthcheck if needed .
+
+failover routing
+*******************
+ Its nothing but if one region failes the request will go to other region . it will automatically point the request to secondary region .
+ 
+ remove the old record. create 2 ip records one by one . by setting the policy to failover and also set one ip to primary and other ip to secondary . and enable health check. and set the ttl to 1 min . now turn off the one instance (primary) then check it will automatically movess to secondary ip and get the request from that site.
+ 
+ Geolocation routing 
+ *********************
+ 
+ We can choose where our traffic can be sent based on geographic location. for eg : if europen customers want to access the europe based region site we can set it up in that way ( for eg : europe currencyy value is different so we can set it up in that way) . SO here we taking two IP and create a record for each one , setting policy to geolocation , and set id to region, and from which location the request can be comme from (europe ). so erupe people while accessinng the site the reqquest will go to europe server ( These servers may have the locallanguage of europen customers in that way we can set it up ) 
+ 
+ Geopromixity routing
+ *****************
+ 
+ in this we can set the traffic rules deeply and widely. This will come in advance . To use thie routing policy we must use route53 traffic flow
+ 
+ Multivalue Answer policy:
+ ***************************
+ It is same as simple routimg policy , in simple routing policy we will add all the 3 ips in single record without health check , but in multivalue we can add each IP in different record as like other policy and in this we can have health check too where we dont have healthcheck in simple policy . So if one ip fails it will automatically failover to other using healthcheck
+ 
+ ##########################################################################################################################
+ 
+ VPC :  Virtual private network 
+ 
+ * We can easily customize the network configuration , for eg : we can create a public facing subnet for your webservers that has acess to the internet, and place your backend servers such as databases or application servers in private facing subnet with no internet access.
+ 
+ We can create our own subnets and launch instances withing that and assign custom ip address ranges in each subnet
+ We can create a internet gateway and attach it to our VPC 
+ We can have much security control over our aws resources 
+ 
+ There is default VPC and custom VPC
+ 
+ Default VPC is user friendly allowing us to immediately deploy instances,  and all subnets in default VPC have a route out to the internet
+ Each EC2 instance has both a public and private IP address
+ 
+ 
+ VPC Peering:
+ 
+*Allows you to connect one VPC with another Via a direct network route using private IP address
+*iNSTANCE behae as if they were on the same private network
+* It consists of Route tables, network access control list (stateless), subnets and security groups and also VIrtual private gateway
+*You can peer VPCs with other aws accounts as well as with other VPC in the same account. Peering is star configuration that is 1 central VPC peers with 4 others . No TRANSITIVE peering ( if A and B has peer connection and C has peer connection with A, since C has peer connection with A it cannot connect to B . to connect with B it should have seperate Peer connection with B )
+*we can have peer between regions
+
+Create your own custom VPC  part-1
+*******************************
+Click create new VPC -> enter the name for VPC and CIDR - 10.0.0.0/16  and choose tenancy default . VPC created
+
+Once new VPC created , route table will be create for new VPC and network ACL and security groups will be created by default .  Subnets and internet gateway will not be created.
+
+Now need to create a new subnet -> enter a name for subnet with region name (10.0.1.0 - us-east-2a) that we going to choose below.   and choose the VPC that we created and choose the region  and  cidr 10.0.1.0/24  and now we going to create another one again  with 10.0.2.0/24 with region us-east-2b .
+
+Turn on autoassing public address by choosing the subnet and action -> modify auto assgn IP and enable it . we have to do this for 1st subnet so that Ec2 instances that are attached with that subnet will have public IP address which can access to the outer internet and let the other one be private. So one subnet is public and another one is private which will not have public address (public - 10.0.1.0/24 prviate - 10.0.2.0/24 )
+
+
+Now we going to add the internet gateway for VPC - > create a new gateway in the name of "myigw" once created it will be in detached status , now we need to attach that with our VPC. only one igw per VPC
+
+Now we going to create a route table . 
+Note : in the route table there will be a route which is used for communication between two subnets within the VPC . In VPC if there is two subnets so they can communicate between them . so automatically there will be a route will be created default in the route table.
+
+Lets start with route table . Once we created a New VPC we will have a default route table (which is called as main route table) . ("which will be facing public so need to change it as private by removing the route 0.0.0.0 "  why because whatever subnets that we created will be defaultly associated with the main route table, so for safety purpose we making the main one as private facing . So now we going to create a another route table associated with new VPC as facing public by adding routes(des- 0.0.0.0/0 tar- igw ) and for ipv6 also we can make a route as " des - ::/0  tar - igw "  . As for now we have two routes one is private and another is public. Now subnets are defaulty associated with main route table so associate "10.0.1.0 - us-east-2a"  to second route table becasue that subnet is already public . so another subnet one will be default in main route table which is private.
+
+We have to create a 2 ec2 instances one with private subnet and other with public subnet . put db server in private and webserver in public
+
+Note : amazon always reserve 5 ip adderesses within your subnets 
+US-east-1 in one account will be completely different AZ to us-east-1 in another account . 	AZ are randomized
+Only one IGW for vpc
+Route table, NACL,security group will be created defautly with VPC that we created.
+
+
+Part-2
+*****
+
+Now we cant able to ssh the DB server through App server because the security group in DB server is not having allow ports . So creating a new security group for db server and attaching with VPC and allowing ssh, http, https,mysql/aroura, icmp ports in that security group.and attach that security grup to db server.
+
+Now we taking ssh to app server and then ssh to Db server. to ssh DB server we need private key , so just copy the private key content from our computer and create a txt file in appserver "myprvtkey.pem" and save that content into that file. Now using this key file we can ssh to Db server  .
+
+Now Db server ssh work . while doing yum update its failed because it is not connected to internet. so moving forward going to see the steps to cover this prob
+
+##################################################################
+NAT instances and NAT Gateways   - Network address translation 
+****************************
+
+Nat instances vs nat gateway : NAT instances is a single EC2 instances and nat gateway highly available gateway which is spread across multiple available zone thy not depened on single instance
+
+NAT instances:
+
+we can choose community ami and search for NAT  and select nat operating system to install in EC2 and choose the New VPC that we created and place this ec2 in public subnet  and put in same security grp which we used for app serer . Once nat server created go to action networking and change source/destination and disable it . We need to disable sour/dest check .
+
+Now we are going to add route to communicate with nat server . I.e our Private route should talk to NAT. in that case edit the private route table(which is main) and add the entry destination :0.0.0.0/0  and target- nat instance (type i for instance search) . Now DB server can talk to internet and  yum update will work.  
+
+So if we have 1000 of servers in private subnet and using this nat instance it will not be good. SO we going to use NAT gateway.  SO terminate the NAT instance and remove the route from private route table . In the route table the created route (for NAT ) status will be in blackhole which means the instance no longer exist.
+
+Now we are going to create a NAT gateway  (under VPC dashboard) (nat instance and nat gateway should be in public subnet) only one NAT gateway can be created in one AZ
+*****************************************
+VPC -> Natgateway -> create a new nat gateway in the public subnet and then create a ELB . and then edit the route table (MAIN) and enter destination 0.0.0.0/0  and target- nat gateway . Now db server can talk to internet
+
+if our resources (instance) in different zone are connected with single NAT gateway (which will be in one zone) if that zone is failed all the resources in different zone will loose internet. so we have to create a NAT gateway for each Availablity zone to connect with their own resources.
+
+#####################################################################################
+ACL - Network acces control list vs security groups ( we can add mulitple NACL under one VPC)  IT is stateles
+*************************************
+Note: everytime when we create a subnet it will automatically assign to our4 default NACL (which is created while creating VPC) . One subnet can associate with only one NACL at a time. 
+NACL will act before security group . First it will check the NACL and then only it will move to security group . so If you allow the port in security grup and deny in NACL. First it will deny it. because after NACL then only security group will check the port .
+
+Whenever we create a New network ACL the default will be deny all inbound and outbound traffic . once we creating rules to our inbound and outbound rule please add ("custom TCP rule"  port 1024-65535 ) then only yum update and other all will work.
+
+* Create a new NACL attaching with our new VPC that we created ( which will deny all inbound and outbound traffic defaultly)
+* Create a web sever , now default out subnets are  attached with prvious NACL (while testing the website is reachable) . Now we need to move the subnet (in which we created the websserver) to newly created NACL (where default all are deny) now site is not access . Now go do the new NACL and edit the inbound rules by adding the ports to allow ( 80,443,22) 100 200 300 rule number . Now the site is accessible .
+
+NACL will work under the priority of rule number that we set . For example if we set rule number 100 for port 80 to allow in inbound and in the same we setting port 80 (rule 300) to deny in inbound . First it will take the rule 100 and allow the port. it will not deny because it is in rule 300. So now we setting the 80 port to deny in rule 99 . now it will deny because 99 will be first ( in 100 we allowed ). 
+
+Now remove the 99 rule . Now website will work . When we try to do yum update in server it will not work . because we should add the ("custom TCP rule"  port 1024-65535 ) in both inbound and outbout . then only other things will work . this is for only the NACL that we created. Default NACL it will be there automaticaly
+
+NOTE : NACL will work incremental oder. first number wil be the first preference . above is the example 
+
+NOTE : VPC automatically comes with a default NACL and by default it allows all inbound and outbound traffic .  But when we create a NACL newly which will be default deny all inbound and outbound traffic . 
+
+WE can block IP address using NACL but not with Security groups. 
+
+We can have mulitple subnets in one NACL but one subnet will not be attached with muliple NACL . 
+
+################################################################################################
+
+Custom VPC and ELB
+********************
+Three types of load balancer
+1) application load balance 2 network load balancer 3) clasic load balancer
+
+While provisioning the ELB we need atleast two public subnets.
+IF you are creating internet facing load balancer , the subnet should attached with internet gateway
+
+#######################################
+
+VPC flow logs :
+******************
+
+VPC flow logs is used to capture information about the IP traffic going between network interfaces in your VPC. the flow log data is stored using amazon cloud watch logs. 
+
+Flow logs can be created at 3 levels 
+VPC ,Subnet, Network interface level  --> we can get the logs for these
+
+To create flow logs, we have to choose the VPC that we created and click action and create flow log.
+
+In filter choose ALL (to store accept and reject logs ) and we can choose the destination either the logs can be stored in cloud watch logs or in s3 bucket. now we going to choose the cloud watch logs to store the log. So in the "Destination log " we have to choose the log group but we didnt create one . so we have to create one by going to cloudwatch and then logs and cxreate log group in the name  "VPC FLOW LOGS"
+Now we can choose the "destination log as "VPC FLOW LOG" and then we have to choose the IAM role but we didnt create one either , so there will be a link to create a IAM role for this "set up permissions "  and then enter the role name " flowlogsrole" and once role created we can attach with IAM ROLE which we mentioned before. we can see the logs now in flowlogs that we created (by triying to acess the webserver which is placed in VPC)
+
+After created flow log we cant change the IAM role that we attached with flowlogs
+
+WE can also set up logs for VPCs that are peered with your VPC. but both VPC should be in same account.
+
+VPC flow logs will not monitor all ip traffic , below that are not monitered
+
+* Traffic generated by instance when they contact the amazon dns server will not monitor. IF you use your own dns server then all traffic to that DNS server will be logged
+
+* traffic generated by a windows instance for amazon windows licence activation will not be monitored
+* traffic to and from 169.254.169.254 for instance meta data  will not be monitored
+* DHCP traffic will not be monitored
+* traffic to the reserverd IP address for the default VPC router
+############################################################################################################
+
+BASTION Hosts: which is used to ssh or RDP to the instance which are in private subnet . we do have AMI for bastion , so we have to create a 
+a bastion host in public subnet .  so if we have to ssh the instance that in private subnet , we have to ssh the bastion and then have to ssh the instance that in private. Bastion is also called as jump boxes
+
+We cannot use a NAT gatewway as bastion host. A Nat gateway is used to provide the internet traffic to EC2 instance that in private subnet (like doing yum update etc)
+
+Bastion is used to securely administer EC2 instances(like ssh)
+
+##########################################################################
+Direct Connect :
+##################
+
+Direct connect directly connects your data center to aws.  Direct connect is a cloud service that makes it easy to establish a dedicated network connection from your premises to aws . which can reduce your network cost, increase bandwidth and provide more consistent network.
+
+##########################################################
+Setting up direct connect 
+**************************
+
+www.youtube.com/watch?v=dhpTTT6V1So
+
+#################################################################
+Global Accelerator :
+******************
+Aws global accelerator is a service in which you create accelerators to improve availablity and performance of your application for local and global users. 
+
+we are assigned with 2 static ip address
+
+You can control traffic using traffic dials
+
+shortly : if we get request from user it will directly connect to aws global accelerator and send request to our endpoint group (which can be created for each region ) from endpoint group it directs to endpoint (webservers, elb,etc)
+
+User req --> global acc      --> endpoint group                          --> endpoint
+                             group can be created region wise                from that region it will go to the ec2 or lb etc
+
+Once we created global acelerater , it will give you 2 static IP address and one DNS . we can use this to reach our ec2 or website .   
+
+Normally if we didnt use the global accelerater the request will pass through each dns to resolve and then reach the endpoint. but in this case it will direct reach our end point which wil give best performance
+
+
+Create a global accelerator -> attach your ALB or NLB 
+Now we get global acceelerator end point. Using that enpoint we can access our serivices or application . Global acclertor will provide two static IP address , where we can give that to client end for whitelisting the IPS . 
+
+#####################################################################
+VPC endpoint:
+******************
+
+VPC endpoint enables you to privately connect your VPC to supported aws services (like s3) . VPC endpoint services powered by private link without requiring an internet gateway ( withing our VPC we can connect our private subnet instance to s3 bucket without internet gateway, NAT device , VPN connection or Direct connection  )And also instance in our VPC do not require public IP address to communicate with the resources (s3) . 
+
+2 types of VPC endpoints  1) Interface enpoints 2) gateway endpoints
+
+Interace endpoints is related to network interface that can communicate using vpc endpoint to the other services
+
+gateway enpoints : 1) amazon s3  2)dynamo db  (currently these two are available )
+
+Now if we need to put or get the file from Db server(which is in private subnet) it will use NAT gateway to reach the s3 bucket and will upload and download the file . 
+
+Now in the case of gateway enpoint  now the instance will directly send the request or file to VPC gateway and then it will send the file to s3 bucket. ( in this we will not use nat gateway to connect the dbserver to s3 bucket , we are using VPC gateway )
+
+LAB session:
+
+1 ) need to check whether roles are assigned for commnunicating between the ec2 and s3 services . if not go to IAM and roles and create a role for accessing s3 bucket with full permission . and then assign the role to the EC2 instance(DB server) by choosing the EC2 instance and action and then instance settings and attach role . So now Db server has access on s3 bucket.
+
+Move the both subnet(private and public) to default NACL group(default one which is created while VPC creation ) . Already one is attached with this NACL so attach the other one also to this NACL role ( This is not needed in this process just for safety purpose . just skip this)
+
+Now ssh the webserver and then ssh the Db server (private) and now type command aws s3 ls , it will list the bucket list. But it is working througth NAT gateway . so once we remove the NAT gateway route from route table and then we try to list out the s3 bucket it will not work. 
+
+Now we have to create the VPC endpoint. Go to vpc dashboard and Enpoints and "create a end point" - chosse aws service and then choose "amazon s3 gateway" and then choose the VPC ( we created ) and the choose the route table(main default) that need to associate . Now VPC enpoint created if we want to check go to the route table and check there will be a route which is created by VPC endpoint. 
+
+Now try to list our the s3 bucket by " aws s3 ls --region us-east-2" it will work . 
+
+##############################################################################################SS
+Aws private link
+****************
+Private link is used for opening your services in a VPC to another VPC
+
+We can also open up services in a VPC to another VPC but there are some disadvantages
+
+1) Open the VPC up to the internet : Its nothing but just allowing all internect access to VPC through Gateway so it will be highly risk and also there is lost more to manage like put high security to protect the instances etc.
+
+2) Other way we can do is peering the one VPC to other VPC , but in this case if we have 1000 of VPC to connect then it is not possible to peering each and every VPC to each other 
+
+So we are using Aws private link for this , we no need VPC peering ,No route tables, NAT , IGW, etc, only private link is enough to communicate between vpc to other vpc 
+
+Aws private link requires NEtwork load balancer and ENI (elastic network interface) to communicate between source and target. source has netwrok load balancer which has static ip , and target has ENI ( which every instance will have default) . So using source static IP (Network load balancer) we can open up connection to target using aws private link.
+
+
+You can create aws private link to make services in your VPC available to other AWS accounts and VPCs. AWS Privatelink is highly available ,scalable technology that enables private acess to the services across VPC boundries. Other accounts and VPCs can create an VPC endpoints to access your endpoint service.
+
+endpoint service will provide service where as endpoint is used to access the service  ( endpoint service need network load balancer , endpoint need ENI elastic network interface
+
+
+Endpoint service ( Service that we are providing through this endpoint service )
+
+In this we creating Ec2 server and attaching that to Network Load balancer. Consider ec2 is providing some sort of services. Without network load balance we cant create a endpoint services.
+Create a endpoint service (under VPC) choose the Network load balancer that we created and click acceptance required ( for communication acceptance)  click create service. Now LB will be associated to endpoint service.
+Now copy the service name (endpoint service name that we created ) 
+
+Endpoint  ( going to acess the service through endpoint)
+
+Create a endpoint , choose a service catagory and paste the "endpoint service name that you created above" and choose the vpc whatever you need like default and choose the security group and az for this endpoint that you creating. Once endpoint created there will be a request sent to your endpoint service, go and accept the request. 
+
+Now the private connection between endpoint and endpoint service has been created .  In this we didnt create ENI for endpoint  it will automatically create by itself once we created endpoint. 
+
+
+########################################################################################
+Aws Transit gateway  (simplify the netwrok architecture topology)
+**********************
+
+Allows you to have transitive peering between thousands of VPC and on premises data centers, it will work has hub.
+
+#######################################################################################
+AWS VPN cloud Hub:
+*****************
+If you have mulitiple different sites, each with its own vpn connections, you can use AWS VPN cloud hub to connect those sites together . IT is like HUB model
+
+###################################################################
+
+AWS network costs:
+
+Use private IP addressses over public IP addresses to save on costs. This then utilizes the aws backbone network
+
+* If you want to cut all network costs, group your EC2 instances in the same availablity zone and use private IP addresses. This will be cost-free, but make sure to keep in mind if This AZ failes then its going to be downtime.
+##############################################################################
+
+VPC Summary :
+
+VPC : VPC is a logical dataceter in AWS , Consists of route table, network , ACL, subnets and security groups . Security group are statefull, NACL are stateless . And there is no TRANSITIVE PEERING
+
+VPC create default route table ,NACL , security group . WOnt create any subnets and Internet gateway
+
+Only one IGW can create with one VPC , Amazon always reserve 5 IP address with your subnets
+
+NAT instances : We have to disable source and destinataion check on instance . Nat instances must be in public subnet. There must be a route out of the private subnet to the NAT instance,in order to work. NAT instances are always behind the secuirty group. 
+
+NAT Gateway : NO need to disable source and destination check . NO need to patch . Not associate with security groups.  Make sure the Resources use the NAT gateway in the same availablity zone 
+
+We can have upto 5 VPC in each AWS region . 
+
+NACL : Your VPC automatically comes with default NACL which allows default all inbound and outbound. But when we create a new NACL which will deny all inbound and outbound traffic. VPC must be associated with a NACL. IF you dont associate a subnet with NACL then subnet will automatically associated with the default NACL.  Block IP address using NACL but in security groups we cant. NACL can have muliple subnet, but one subnet can have only one NACL.
+
+ELB and VPC : You need a minumum of two public subnet to deploy an internet facing loadbalancer.
+
+VPC flow logs -  only same account VPC we can enable flow logs, not from different account . You can change the configuration once flow log created.
+Not all IP traffic is moniotred. IF we are using Amazon DNS server it will not log the traffic , only if you using the outside DNS it will log the traffic which comes and go . Not monitor the amazon windows license activation . DHCP will not be monitered . Default Reservered IP also will not be monitored.
+
+Bastion : It is also called as jumb box. NAt gateway or nat instances is used to provide internet traffic to ec2 instance in a private subnets. But Bastion is used to administer EC2 instances (like ssh or RDP). You cannot use NAT gateway as bastion .
+
+Direct connect : Direct connect directly connects your data center to AWS which is useful for high throughput workloads. And also if you need stable and reliable secure conection we can use Direct connect
+
+Global accelerator : Is a service in which you create accelerators to improve availablity and performance of your applications . The users reach AWS edge network and then through AWS backbone network it will reach the endpoint (ec2 or ELB  etc) . 
+
+VPC endpoint : Privately connect your VPC to supported AWS services . Which does not require internet gateway or nat device or vpn connetion.  Instances in your VPC do not require public IP addresses to communicate with the resources(s3) .
+Two types of VPC enpoints 1) interface 2) Gateway 
+Currently gateway endpoint supports only s3 and dynamo DB
+
+
+AWS private link : It is used to peering VPCs to tens,hunderds,or thousands of customer VPCs . To do this Private link is used. Doesnot require VPC peering, no route tables , NAT, IGW etc.  Only Network load balance  and ENI (Elastic network Interface) needed for this service.  NLB is on the service VPC (application server ) and ENI is on the customer VPC 
+
+Transist gateway : Allows you to have transitive peering between thousands of VPCs and on-premises data center , words on hub and spoke mode. ITs supports IP mulitcast . 
+
+AWS VPN cloud hub : If you have mulitple sites, which can connect to VPC with VPN ( AWS VPN cloud hub) . In this each sites can connect with VPC and also each site can talk to other sites aswell 
+######################################################################################################
+
+ELB : Elastic Load balancer
+***************************
+
+!) Application load balancer 2) Network load balancer 3) Classic load balancer
+
+Application load balancer : It will loadbalance the HTTP and HTTPS traffic.  works in layer 7 ( Application) : For example if we choose the language option in website like choosing US language it will route to the Specific application servers (we can configure like this way) . So it will load the balance in application level
+
+Network load balancer  :  it will loadbalance the TCP traffic . which will give extreme performance. Operating at layer 4 (network layer) . It is capable of handling millions of requests per second .
+
+Classic load balancer :  are legacy elastic load balancer ( OLD lB ) WE can load balance HTTP/HTTPS applications and user layer 7 features such as "X-forwarded  " (this will be cover below) . it will opereate in both Layer 7 and layer 4. If your application stops responding the (CLB) responds with a 504 error. This means that the application is having issues. 
+
+X-forwarded-for : This is nothing but if you need the IPV4 address of your end user, look for the x-forwarded-for header . For eg: The user has public IP address, when the user hits the load balancer ( the load balancer has private IP address internally facing the applications ) So Now the load balncer sends the requests to application server but it will send the source IP has its own IP not the USER public IP . In this case if we need to know the user public IP address we have to look up for "x-forward-for" header which will have public IP address of the user.
+
+###################################################################################
+Remove all the configuration that we done above till now in AWS 
+
+
+Load Balancers and health check - LAB :
+****************************************
+Lanch 2 different instances with two different region with webserver installed (app001 - webserver01 app002 - webserver02) mention this in website . apply security grp as webDMS which is previous one, and check the site whether its working for both apps
+
+Create a load balancer : create a LB with classic LB. name:myclassicELB and choose the default VPC and choose the listner port 80 and use the security grup as same as we used for app server. and then configure health check and then we have to add the EC2 instances and now LB is created. There is no IP address for ELB only DNS name for ELB.  and also check instance are "in service" once LB created it will take time to show this status in healthcheck.Now check the site using DNS NAME . Now stop one instance and check the LB will take out the app server from LB .
+
+
+Now we going to check with Application lB
+*******************************************
+Remove the old LB that we created . Now go to the target group under LB and create a target group and in target group add the instances . and now create a ALB . same as above we did. in this we can choose the targetgroup that we created. Once LB created we have to register the target by addeing two servers (it will be in target moudule setting). Now LB is ready. Go to the LB and check there will be edit and rules option will be there. in that we can configure and route manything in application wise. (intelligent routing)
+
+
+Advanced load balancer theory:
+*****************************
+ Sticky sessions : this will enable your users to stick to the same EC2 instance. Can be usefull if you are storing information locally to that specific instance . For eg : IF you have two ec2 instances both are sharing equal request. If you enable sticky session on one specific EC2 instance then traffic will not send to that EC2 instance. Only the User which  you bind to that EC2 can send the request to that EC2 instance . Others will be sent to the second ec2 instance.  IN exam they will ask you are not receiving any traffic to an single instance(sticky enabled ) in that case we have to disable the sticky sessions on that server. 
+
+Cross zone load balancing : This enables you to load balance across the multiple availablity zones. For eg. In one availablity zone we have 4 instance with LB which can send the traffic equally . IN other Availablity zone we have only two ec2 instance with LB which also shares the equal traffic to them (both availablity zones are created for single site ). Incase if the second availablity zone cant handle the traffic due to overload what is the fix for this.  Cross zone load balancing will help us to share the traffic from one zone (2 instance) to the other Availablity zone LB(which has 4 instance). 
+
+Path Patterns : This allows you to direct traffic to diferent EC2 instances based on the URL contained in the request. For eg : IF any request comes like www.tinyurl.com then it will goes to the first availablity zone(which has 4 instance) and if any request which comes like www.tinyurl.com/images/ then it will goes to the second availablity zones which has two instance. We can configure in that way like any request to access the images content will send the request to that particular instance. 
+
+###########################################################
+Autoscaling : There are different types of scalling options
+
+1) Maintain current instance leveles at all times :   For eg: we have four webservers and incase any one instance went to unhealthy the auto scaling will remove that instance and add the new instance to that group. So it will maintain 4 servers all time ( we have to configure in that way)
+
+2)scale manually : we can manually add or remove the instance manually 
+3)scale based on schedule : In specific schedule time autoscale will scale the instance to specific level(as requested )
+4)Scale based on demand : Will do in the LAB (if cpu reaches above 80% it will autoscale)
+5) Predictive scaline
+##############################################################
+Autoscaling group :
+
+Remove previously created LB , target grup and ec2 instance
+
+Now we going to provision the auto scaling group.  But before creating autoscaling grup we have to create launch configuration . Choose what the configuration that wee need to create the instance . we can create a instance with bootstrap script for creating as webserver. once lanch configuration completed. we can create autoscaling grup. ( instance will be created in the configuration that we choosed in lanch configuration) 
+
+Create a autoscaling group : Enter group size as"3" which will be creating 3 instances. and in the subnet we can add mulitple subnet. which will create the instance equally in all subnet. and then choose "use scaling policies to adjust the capacity of this group" and choose scale betwee 3 and 6 instances. (minimum there will be 3 instances, if the metrics that we choose is reached above percentage then it will automatically add the instance) . and then we have to choose the metrics (like cpu utilization, LB request count, average network in ) if we choose the CPU utilization and configure 80%  as target value. Then if CPU is utilized 80 percent then addtionaly instances will be added automatically. Once done we can see 3 instance will be launching (in starting we given group siz is 3) . IF any one instance is terminated Autoscaling group will automatically add the 1 instance to the group with the same configuration that we added in "launch configuration" (it will keep the instance state 3, untill it reaches the cpu utiliztaion 80% then it will add the instances newly as utilzation ( that wat we mentioned in scale between 3 and 6) . min is 3 and max is 6 . If we delete the autoscaling group that we created then it will delete all the 3 instances. 
+###################################################################
+NOTE : Scaling out : It means adding extra instances like that    scaling up : it means increasing the resourses inside our ec2 instances like adding extra ram like that .
+
+WORD press site
+***************
+
+create 2 s3 bucket , One is for images, and another one is for code . and the go to cloud front and create a distribution for images(s3 bucket that we created). and now create a RDS . And then create a role for accessing s3 bucket from Ec2 instance . Now create a instance with appache, php-mysql,and wordpress . (script will be given below) and then attach the role . Now login to the instances and check whether https are up . and then copy the App ip and login through browser and connect the database steps using wordpress . In the wordpress site we can create a website and upload the photos that we want and create a website .
+the upload photos will be stored in /var/www/html/wp-content/uploads . Now we need to copy the images(/var/www/html/wp-content/uploads) to s3 bucket (images folder) and then copy the complete code to (/var/www/html) to s3 bucket(code folder ) now complete site is backed up in s3 bucket. Now wat we going to do is instead of serving the images from the ec2 ( while accesing the site the images are coming from ec2) , we going to use cloud front to distribute the images instead of ec2 instances. now in html folder edit .htaccess file in that paste the cloudfront domain (which we created for images above). so from now it will server the images from cloud front and also we have to edit the httpd.conf file (Allowoverride None) we have to change it has (Allowoverride All). once httpd config changed restart the service. And also make the s3 bucket(media) as public to access to photos . Now when we open the site and check the images will be coming from the cloudfront not from ec2.
+
+HTACCESS : which is hidden file where we can say take the picture from cloudfront insted of images folder(in server)  in that we have to paste our cloud front url which we created for images. we have to edit in rewrite line
+
+and also we have to update in apache config file to allow rewrite option .  go to http config file and there will be line allowoverride none , we have to chaange that allowoverrider All . 
+###################################################################################
+Building fault torlernt word press site
+
+1. Main concept is there will be writer node (which is created above for wp site) where admins will make changes in the server but this will not serve the site. We have to create a image from this main server and create a reader node . and place it in autoscaling group (max 2 server). while creating autoscaling group mention that it should be create under application loadbalancer . so whenever new server created it will be automatically goes under lb. dont forget to remove the main server from LB . Main thing is we have to create a cron job in writer node ( sync all the code and  media files from writer node to  s3 bucket accordingly) and in reader node we have to create a cron job for( sync all the data from s3bucket (code and media) to reader node path (/etc/var/html) ) so whenver we make changes in writer node it will sync in s3bucket and reader node will get the updated information from s3bucket. so if one server is terminated autoscaling will create another one and launch in LB. 
+
+#########################################################################################
+Cloud formation:
+
+IS a way of completely scripting your cloud environment
+Already a bunch of cloudformation templates created by aws solution architets which will allows to create a complex environment very qucikly.
+
+For eg :the above word press site is created by us . The whole configuration has been already created as a template in cloud formation so once we use that template it will create a complete word press site with DB and instance qucikly automaticaly.
+
+CFT - cloud formation template. it can be written in yaml and json. yaml is prefable because it is easy to write and read the things. and also we can comments the description like "# this is used for something" like that.
+
+cloud formation will not only used for creating the infra, it is also do drift detection. Like using CF we created EC2 and s3 bucker , where someone change the bucket version of s3 bucket to disabled. so this drift detection will find out the difference and it will notify us on the change. So we can check and we can change it accordingly. 
+
+There will be many CFT defaultly created by aws, if we written by your own  in yaml file, we can import them to CFT using "create stacks " option. 
+
+in CFT we can write our code with these structure ,
+version - version of the CFT
+description - description of the CFT
+metadata
+parameters
+rules -- rules is nothing but we can set some rules like if any one is about to create s3 bucket, it should be in proper naming convertion other wise it wil not create the s3 bucket . 
+mappings  -- assigning the parameters to variables
+conditions
+resources -- like ec2 s3 like that 
+
+All the example for each resources are available in the aws cloudformation page using that we can create the resources and also we can use the visiual studio and install the two plugings "yaml and aws tool kit"   which is verymuch helpful for creating the template . while typing something it will show what exactly you want and then we can choose that . so aws tool kit is used for this.  yaml toolkit will check for the intentation. 
+we can also store our template in s3 bucket , so while creating stack we can choose the template from the s3 bucker , or we can just enter our code directly .
+
+############################################################################################
+Elastic beanstalk
+
+With elastic beanstalk, we can qucikly deploy and manage application in aws cloud without worrying about the infrastructure that runs those applications. onlything is we have to simply upload our application or code which will automaticallyy handles the details of capacity provisioning, load balancing , scaling  and appliccation heath monitoring. 
+
+Just simply upload our application or code which will create a whole environment.
+##############################################################################
+SNS: Simple notification service . SEnd notification from the cloud
+
+It is used to publish messasges from an application and immediately deliver them to subscribers or other applications.
+SQS - simple queue service 
+Both sns and sqs are messaging service in aws. SNS - push ( push the information) and sqs - pull ( we can pull the information )
+##############################################################################################
+SQS : SImple queing service 
+
+SQS is a pull based not a push based. ( ec2 instances can pull the messages from queue and prepare for its need , like creating meme or etc. )
+Messages can be in 256Kb in size. IF it is more than than then it will be in s3
+Visiblity time out :   the amount of time that the messages will be invisible in the sqs queue once it is picked by any ec2 instance for processing it. If the ec2 instance complete its work before the visiblity time then the message will be removed from the queue. IF the ec2 instance cannot complete its work with that message within the visiblity time then again the messages will be visible in the queue so that another instance can again pick the message , which will cause duplicate entry.  to ignore this we have to increate the visiblityy time, The maximum visiblity time that we can set upto 12 hours .
+
+
+Two types of queue :
+
+Standard (default) : we can use unlimited transactions per second. standard queue guarentee that a message will be delivered  atleast once ( may more more than one also due to visiblity issue)
+Standared queue provide best effort to ensures that messages will be  generally delivered in the same order as they are sent (but not 100 percent sure )
+
+
+FIFO :  Firstin first out deliver exactly in the same order (in sequence) . It will not create duplicate entry becauuse it will wait and remove the data once the ec2 complete its work. 
+300 transaction per seconds,  not fast as standard queue.
+###############################################################################
+Elastic transcoder 
+
+it is a media transcoder in the cloud. it converts media files from their original source format into different formats that will play on smartphones, tablet, pc etc
+#######################################################################################
+API Gateway :
+API that acts has a front door for appliction to access the data or functionality from your back end services such as ec2, code running on lamda , or any web application. API gateway has cache capablities to increase performance . and api is low cost and it scales automatically. and also we can logs results to cloud watch 
+###########################################################
+Web identity federation - cognito
+*********************************
+
+for eg :IF a user want to login our website, she going to use the facebook or google account for login , once the facb authorized the login credention then it will pass the authorization token to cognito , then cognito will convert it to jwt token and then user sends that jwt token to identity pool and then the user will have the access 
+
+USer pools : It handles things like user registration, authentication, 	and account recovery
+identity pool : authorise access to aws resources
+
+###################################################################
+WAF - web application firewall which is used to block the sql injection attack and scripting attacks. and also it is used to blok ip address which we specified . For eg , If we managing public website, we have to use this WAF for safty security . NACL will also block the IP address but if user trying to attack with different ips then we have to go with WAF which will stop these attacks and it will work on layer 7 
+####################################################################
+Parameter store :
+It is serverless storage for configuration and secrets like passwords,license codde, API keys.
+###############################################################################
+LAMBDA :
+
+AWS Lambda is a compute service,where you can upload your code and create lambda function. AWS LAMBDa take cares of provisioning, and managing servers that you use to run the code. you dont have to worry about os, patching and sccalling etc.
+
+lambda is most commonly used for like, example if any one who created the s3 bucket with public access, so we can write a function n lamda saying remove the s3 bucket which ever created with public access or we can also send sns notification to the user who created the s3 bucket . 
+
+NO servers 
+continous scales,  one request will create one lambda function.
+
+Lambda will scale out automatially but not scale up . one req = one function , lambda is serverless (like s3)
+
+AWS xray will alows to debug whats happeening if any prob in your serverless architecture 
+
+
+LAB : Now we are creating a website with serverless and also using lambda we going to call a function ( like pressing a click buttion it will show whatever we coded likeyour name )
+
+First create a lambda function in that put your code ( anything like your name tht should come in page) and this code can be accessed through api gateway so we have to create api gateway for this (this will be in same page where we creating the lambda function )once api gateway created it will give one link . through this link we can acess that code (That means if we click that link we will get our name which is coded ) .  But when we click that link it will show error " Missing authentication token") . this means we dont have api gateway permisssion to acess the lambda function (code) . so we have to give permission by clicking the name of the api gateway (api gateway name is myfirstlambda function) so if we click that we will get some settings in that we have to make changes and integrate the lambda function with API gateway in that setting page. once we done we will get one link, so that link will work it will show our name if we click tht link .
+
+As of now what we done is we have one link which will show our name in page thats it . Now what we going to do is create a webpage (index.html) in that html page we have to code like (if we click "GET" buttion it should redirect to the API gateway link which shows our name)
+EG : There will be webpage with somecontent in that webpage there will be "GET" button if we click that buttion it will show your name " thats it
+
+But the website will be hosted in s3 bucket, we have to upload the index.html page in the bucket and make it has website page . 
+each and every object in s3 have a link to acess, so get the index.html file link and make a dns entry for your domain . so when you enter your url it will redirect to s3bucket website. mainly we have to make the bucket as public otherwise it wil not work . 
+
+
+LAMDA LAB:
+
+here we going to do an task like, deleting the stale sanpshots which means the snapshot which is taken from the volume should not be attached with any ec2 instances, for eg, an ec2 instance which was running before and the user take 10-20 snapshots for backups, after few years he has to delete the complete ec2 instance and other resources which is created for that app. he deleted the ec2 instance and the volume which is attached with the ec2 everything. finally he forget to delete the snapshot which is taken . for this we going to trigger lamda function which will check what are the stale snapshots (nt use) is present and it will send notification to the user or it will delete the snapshot (according to the function that we written in python). which is used for cost-optimization . snapthost will create cost to the company , so we can do these kind of things to optimize the cost . using python code doing these things, in python we use boto2 module which will interact with aws api and get all the details of the resource which is useful for this task.
+
+How Lambda Knows When an Object is Put in S3
+S3 Event Notification Configuration:
+
+Event Notification is the mechanism by which Amazon S3 can notify other AWS services, like Lambda, about an event (e.g., an object being created, modified, or deleted in a bucket).
+To set this up, you configure an event notification on the S3 bucket. This involves specifying the event type (e.g., s3:ObjectCreated:* for an object upload) and the destination (in this case, a Lambda function). like if any object is newly puted in s3 this event will trigger the lambda
+
+Once the event notification is set up, whenever an object is uploaded to the S3 bucket (based on the event type), S3 sends a notification to the Lambda function.
+The notification contains information about the event, such as the bucket name, object key (file name), and other metadata.
+
+Then The Lambda function then processes the file, and you can write your logic to do things like image resizing, data parsing, or other custom actions on the object.  we can also do like processing the log file and take out the errors count and their description and put them in separate s3 folder. so that errors can be easily found on that s3 folder separately and also if any critical error we can also integragte sns to send the notification. these can be done in the python code itslsed. but sns should be created by you in the sns service, which can be called in python.
+
+
+
+
+#############################################################################
+
+Kinesis : 
+
+
+Which is used to store the streming datas from ( ec2, mobile,laptop, lamda ) . it will store  the data upto 24 hours to  7 days. The data contains shard .  These datas can be used by data consumers.  The data consumeres can access the data and analysis and use it for their process. 
+
+
+KMS :
+
+customer master keys (CMK)
+
+3 types:
+
+AWS managed CMK  : free, used by default if you pick encryption in most aws services. only that service can use them directly. 
+custom managed cmk : Allows key rotation , controlled via key policies and can be enabled/ dissabled.
+aws owned cmk : used by aws on a shared basis across many accounts. you typically wont see these. (this can be used by aws to protect the customers data) 
+
+Two types of encryption :
+
+symmetric cmk :
+
+Same key used for both ecryption and decryption .
+AES-256
+AWS services integrated with KMS use symmetric cmks
+
+
+Asymmetric:
+
+Mathematically related public/private key pair 
+we can download the public key and use outside the aws to access the services
+Used  outside aws by users who cant call KMS api .
+AWS services integrated with KMS wil not use asymentric cmk
+
+################################################################################
+CORS : Corss orgin resourse sharing  
+&*****************************************************
+SHORT
+
+
+s3 transfer accelerater  -> s3 transfer acceleration uses the cloudfront edge netwrok to accelrate your uploads to s3. instead of uploading directly to your s3 bucket, you can use a URL to upload directly to an edge loaction which will then tansfer that file to s3. 
+
+Aws datasync : Allows us to move the large amount of data from on-premises to aws . replication can be done hourly daily or weekly .
+
+VPC endpoint enables you to privately connect your VPC to supported aws services (like s3) . VPC endpoint services powered by private link without requiring an internet gateway
+
+Gateway endpoint using this we can connect our private subnet ec2 instance with s3 
+
+Private link is used for opening your services in a VPC to another VPC
+So we are using Aws private link for this , we no need VPC peering ,No route tables, NAT , IGW, etc, only private link is enough to communicate between vpc to other vpc 
+
+Transist gateway  : Allows you to have transitive peering between thousands of VPC and on premises data centers, it will work has hub.
+
+
+
+ALB : target group -> add instance -> create alb -> attach the target group -> register the servers in target group
+
+AWS Lambda is a compute service,where you can upload your code and create lambda function. it is serverless, the lambda function can be trigrred using api gateway. 
+
+Athena :
+
+Athena is interactive query service  which allows you to query data located in s3 using standard SQL,
+Serverless,nothing to provison , pay per query/per TB sccanned
+commonly used to analyse log data stored in s3
+
+
+
+AWS CODE COMMIT, CODE PIPELINE, CODE BUILD, CODE DEPLOY
+
+CODE COMMIT:
+
+it is same as git, for code commit we cant use the root account of the aws, we have to use the IAM user for cloining and other task.  same as git we can have the cli option like commit, push, and everything .  this code commit is a private repository. 
+disadvantage is like very less integration with services outside aws. not having much features like git , GitHub. it has less features and restriction. 
+many of them are not using this code commit , because of less features than git and bitbucket and etc. so better use git as a code repository in your company.  this code commit is a aws managed services, we dont have to worry about the downtime, scalling and other things. 
+
+CODE PIPELINE:  
+
+its same as Jenkins.  it will use the code build to checkout, build,scan,imagescan,imagepush (CI part) like things. Jenkins is opensource then why we have to pay for the code pipeline ? in case if we use our own Jenkins, we must have to provision ec2 instance for master node and worker node  which will be increased if we have lot of jobs and also we have to manage the whole Jenkins by ourself like patching etc. but codepipeline is fully managed by aws and it will take care of all the things like scaling and other things. 
+we can also efficiently use the Jenkins rather then code pipeline, like initiating the job by docker agent which will run the job and delete by itself. According to our environment set up and our usage we can choose code pipeline or Jenkins for our CI part. 
+and also code that we used for integration can only be usedin codepipeline and it cannot be export to other ci tool, for example we are movingout from aws to azure in that case we can use our code in azure because it can only used in aws , but Jenkins is not in that case we can simply create our environment in azure and we can push our code there. 
+
+Jenkins will take care of CI part completely like building , scanning , imagepush like that , but in code pipeline it will trigger the code build to do these things, code pipeline can also use to triggere Jenkins for doing these things. 
+
+
+ECR vs dockerhub  (elastic container registry )
+
+both are image repository , in dockerhub we can store the images publicly and privately , and in ECR it is by default private and there is public also available. . what is the advantage of ECR. if we store the images in the docker hub and if the website is down we dont have any service people to contact directly or we dont have support. but in ECR is not that case. and in our company if we have 1000 of employee and where we have to give access to docker website we have to create each user in the docker. but in ECR we can integrate our IAM with that so that user can be directly synced.  so the better option is ECR or quay.io and other cloud repository like GCR (gogle) . 
+IN ECR there is an option to scan the images and then  pushed in the repository. so the before using the images from the ECR we can see the scanned reports is there any security bugs are there and other things. 
+
+so using aws config , we can configure our iam credentials and then we can pull the images from ecr and push the images to ecr, with iam user permissions. 
+
+
+
+
+ECS vs EKS
+
+ECS is aws own service which is used for orchestation like EKS/kubernetes. in ecs if we created our application which cannot be tranfered to other cloud. because it is only for aws platform , whereas in eks we can totally shift the cluster to other environment and we can use them as same as before. 
+
+
+Secret management :
+
+In aws we can use secret manager , which is only can be used in aws, but there is another one which is hashicorp vault which is can be used any where. 
+
+
+
+
+ALB (Application Load Balancer) vs NLB vs GLB:
+
+ALB:
+Best for: HTTP/HTTPS (Layer 7) traffic, modern web applications, microservices, content-based routing.
+
+Use cases:
+
+Web applications: ALB is designed for routing HTTP/HTTPS traffic at the application layer (Layer 7). This allows it to make routing decisions based on the content of the request (such as URL path, query string, host, or headers).
+
+NLB (Network Load Balancer):
+Best for: TCP/UDP traffic, low-latency, high-throughput applications, extreme performance needs.
+
+Use cases:
+
+High-performance, low-latency applications: NLB operates at Layer 4 (TCP/UDP) and is designed to handle high volumes of traffic with very low latency. This makes it ideal for applications that require fast, efficient handling of network traffic.
+
+NLB provides a static IP address for the load balancer, which can be useful when your application requires a known IP or for regulatory compliance.  (like whiteisting the ip in the other end)	
+
+nlb CAN be used in High-Volume Streaming and Video Content Delivery applications , 
+
+Scenario: A global live streaming service uses NLB to route video data from their content origin servers to edge servers in different geographic locations, ensuring that video streams are delivered to users with minimal delay and maximum reliability.
+
+and also it can be used in databases servers also.
+
+GLB: Gateway loadbalancer
+
+Imagine you have a website that needs to be protected by a firewall. Instead of using just one firewall, which could become a bottleneck, you use multiple firewalls. The Gateway Load Balancer distributes incoming traffic evenly across all these firewalls. If one firewall fails, the load balancer automatically redirects traffic to the healthy ones, ensuring continuous protection and performance. a
+
+BElow is the flow.  actually glb is only used for balancing the load in the firewall instance after that only it will go through the alb
+
+Traffic enters the Gateway Load Balancer (GLB): The GLB first receives the incoming traffic.
+Traffic is distributed to firewalls: The GLB then distributes this traffic across multiple firewall instances for inspection and protection.
+Traffic is forwarded to the Application Load Balancer (ALB): Once the traffic has been processed and secured by the firewalls, it is sent to the ALB.
+ALB routes traffic to your application servers: The ALB then directs the traffic to the appropriate application servers based on the routing rules you have set up.
+
+it is also used for different purpose other than routing the traffic to firewal
+
+GLB can be used to manage traffic through multiple WAF instances, protecting web applications from common threats like SQL injection and cross-site scripting (XSS)..
+GLB can route traffic through analytics and monitoring appliances that provide insights into network performance, detect anomalies, and help in troubleshooting issues.
+
+
+3 tier application ( frontend, backend, database)
+
+the flow will be the user request goes to route 53 and it process the domain and get the ip and then it reaches the cloudfront, if the user requested a content which is already cached in the cloudfront then the reply will be sent back from the cloud front itself in edge location. or if the user requested a new content then the request goes from the cloudfront to the ALB and then alb will forward the traffic to the webserver which have all the content in that page , from there it will reach the backend server where our application logic will process the request and if any datas needed it will then reach to db and get the details and then process the data and sent back to the webserver (frontend page to disaply the content)
+
+
+FB page
+Final Flow Recap:
+User Requests Page → Route 53 resolves domain → CloudFront serves static files from S3.
+User Logs In → Frontend sends login data → ALB routes to EC2 instance → Backend checks credentials in RDS → Backend responds with a session token.
+User Views Feed → Frontend requests posts → Backend queries RDS and S3 for posts and media → Backend responds with post data → Frontend renders the feed.
+
+
+EC2 vs lamda
+
+
+Use EC2 when you want full control over your infrastructure, including the operating system, network settings, and system-level configurations.
+ec2 is used to process large data which need high cpu or high hardware resources. 
+Complex networking, VPCs, private IPs, load balancing, and advanced routing can be done in ec2
+but in lambda 
+Limited networking capabilities, typically public endpoints with limited network configurations
+Light to medium compute tasks that do not exceed memory/timeout limits
+Limited control over infrastructure, only what AWS manages for you
+
+
+IAM OIDC  (open id connect)
+
+Scenario
+Imagine you have a stateful application running in an EKS cluster that needs to access EBS volumes. You want to use IAM roles for service accounts (IRSA) to manage permissions securely.
+
+Steps
+Ensure your EKS cluster has an OIDC provider. You can create one using the AWS Management Console or eksctl:
+eksctl utils associate-iam-oidc-provider --cluster <your-cluster-name> --approve
+
+Create an IAM Role with EBS Permissions:
+Create an IAM role that allows access to EBS. Attach a policy to this role that grants the necessary permissions, such as ec2:AttachVolume and ec2:DetachVolume.
+
+Create a Kubernetes service account and annotate it with the IAM role ARN
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ebs-access-sa
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/<role-name>
+
+Deploy your stateful application (e.g., a StatefulSet) and specify the service account created in the previous step
+
+
+IAM OIDC :  detail explain
+
+eksctl utils associate-iam-oidc-provider --cluster <your-cluster-name> --approve
+
+the abve command we used in Kubernetes to associate our iam oidc proidver with our cluster, so the above command is used for that.
+
+What does this command do?
+When you create an Amazon EKS cluster, by default, the cluster does not have an OIDC provider configured for federated authentication. This command adds an OIDC provider to your EKS cluster so that your workloads or users can authenticate with AWS services securely without using long-term AWS credentials (such as access keys or secret keys).
+
+Why is this important?
+The OIDC provider integration is particularly useful for IAM roles for service accounts (IRSA) in Kubernetes. With IRSA, you can associate an IAM role to a Kubernetes service account so that your Kubernetes workloads (e.g., pods) can assume specific IAM roles to access AWS resources, like S3 buckets, DynamoDB tables, or EBS volumes, without requiring AWS access keys in the application itself.
+
+In short, this command enables IAM roles for service accounts (IRSA) by associating an OIDC provider with your EKS cluster, allowing Kubernetes workloads to securely access AWS services.
+Breaking Down the Command:
+eksctl:
+
+eksctl is a simple command-line utility for managing EKS clusters. It simplifies tasks like creating, configuring, and managing EKS clusters, which would otherwise require a lot of manual steps via AWS Console or CLI.
+utils associate-iam-oidc-provider:
+
+This is a subcommand that tells eksctl to associate an IAM OIDC identity provider with your EKS cluster.
+When you run this command, eksctl automatically:
+Configures the OIDC provider for your EKS cluster.
+Creates a URL for the OIDC provider that allows Kubernetes to authenticate using IAM roles via OIDC.
+It essentially connects your EKS cluster to AWS IAM using the OIDC standard.
+--cluster <your-cluster-name>:
+
+This specifies the name of the EKS cluster with which you want to associate the OIDC provider.
+--approve:
+
+This flag automatically approves the creation of the OIDC provider and any associated resources. Without this flag, you'd have to manually approve the action.
+How does OIDC work with EKS?
+In EKS, the IAM OIDC provider enables a mechanism called IAM Roles for Service Accounts (IRSA). This is a secure method to grant specific permissions to Kubernetes workloads (pods) by associating them with an IAM role.
+
+Without OIDC:
+By default, if you want to grant a pod access to AWS resources, you would have to assign an IAM role to the EC2 instance that hosts the EKS worker nodes. This approach isn't ideal because it gives broad permissions to the node, and any pod running on the node can access the resources associated with that IAM role.
+With OIDC:
+Instead of attaching IAM roles to EC2 instances, you can associate IAM roles directly with Kubernetes service accounts using IRSA. This allows you to give very fine-grained permissions to specific pods without needing to manage static credentials.
+
+
+
+Enable OIDC on EKS Cluster:
+
+When you run eksctl utils associate-iam-oidc-provider, the command sets up the OIDC provider for your EKS cluster.
+The OIDC provider is associated with the EKS control plane so that your pods can authenticate with IAM using the OIDC protocol.
+
+without associating the OIDC provider with your Amazon EKS cluster, you cannot directly assign an IAM role to a Kubernetes service account. This association is a necessary step to enable IAM roles for service accounts (IRSA) in EKS.
+
+
+
+
+CloudWatch is AWS-native, so it is tightly integrated into AWS and provides excellent monitoring of AWS resources (e.g., EC2, Lambda, RDS, S3, etc.). However, CloudWatch primarily focuses on AWS environments.
+
+Datadog, on the other hand, provides cross-cloud monitoring, meaning it can monitor AWS, Azure, Google Cloud, and on-premises infrastructure all in one place. If you're operating in a multi-cloud or hybrid environment, Datadog is extremely useful because it consolidates monitoring data from all cloud environments, including AWS and other platforms, into a single pane of glass.
+
+CloudWatch offers basic dashboards and the ability to create custom metrics, but its visualization and dashboarding capabilities are relatively basic compared to Datadog’s.
+
+Datadog provides more advanced and customizable dashboards, interactive visualizations, and the ability to combine metrics, logs, and traces in a unified view. You can create highly customizable and detailed views for your entire stack, not just AWS services. Datadog also supports more complex machine learning-based anomaly detection to automatically identify outliers in your data.
+
+If you're running a microservices architecture with distributed applications, Datadog’s APM (Application Performance Monitoring) and distributed tracing can help you trace a request across all your services and see how they interact. CloudWatch can't provide the same level of integrated tracing and log correlation.
+
+ End-to-End Application Performance Monitoring (APM):
+CloudWatch can provide basic monitoring for AWS resources, but it doesn't have built-in application performance monitoring tools. It doesn't allow you to trace requests or monitor the performance of the code itself.
+Datadog offers APM (Application Performance Monitoring) capabilities, which include distributed tracing, request-level insights, and detailed performance metrics for your application code. This includes monitoring the health of web requests, API calls, database queries, and other application components in a real-time, detailed manner.
+
+Use Case:
+
+If you're building a highly dynamic web application or a microservices architecture, Datadog’s APM tools allow you to track individual requests and see how they flow through your system, identify latency issues, and trace errors back to their source.
+
+
+even datadog can trigger lambda function, but not as cloudwatch doing, but we have to create api gateway endpoint for lambda function that we created , and the endpoint should be configured in webook of datadog to trigger.
+
+
+MONTIORING VS OBSERVABLITY
+
+Monitoring: Helps you keep an eye on the system's health. It’s like having a dashboard with key metrics that give you high-level information about whether everything is working as expected or not. When a predefined threshold is breached (like high CPU usage), it triggers an alert.
+
+Observability: Goes deeper. It’s about understanding how and why the system is behaving the way it is, and helps you explore issues, uncover unknown problems, and troubleshoot complex failures across distributed systems.
+
+###################################################################
+
+S3 bucket cross account replication:
+
+Scenario:
+Apple A is a company that has some important data stored in their system (like a file in a "folder").
+Apple B is another company that needs to access that data from Apple A to complete a joint project.
+However, Apple B can’t just access Apple A’s data directly, because there need to be proper security controls and permissions in place to make sure only the right companies or people can access it.
+
+Step 1: Apple A Creates a Special Role (Permission Grant)
+Apple A creates a role (like a special "data access role") with permissions to access their data.
+This role has:
+
+Permission to read the files from Apple A’s storage.
+Permission to write or update files to Apple B’s storage (if needed).
+The role itself doesn’t do anything until someone uses it.
+
+Step 2: Setting Up the Trust Relationship
+Now, Apple A needs to decide who can use this role to access the data. This is where the trust relationship comes in.
+
+Apple A creates a trust relationship with Apple B. This means:
+Apple A says: "I trust Apple B to use the special role I created, so they can access my data for our shared project."
+This allows Apple B to assume the role and access the data on behalf of Apple A.
+Without this trust relationship, Apple B wouldn’t be able to use the role to access the data from Apple A.
+
+Step 3: Apple B Uses the Role (Assumes the Role)
+Now that the trust is established, Apple B can use the role created by Apple A.
+
+Apple B uses the role created by Apple A to:
+Read files from Apple A’s storage.
+If needed, write to Apple B’s own storage.
+However, Apple B cannot directly access Apple A's data unless it uses the role that Apple A provided through the trust relationship. It can only do this because Apple A trusted Apple B to assume this role.
+
+Step 4: Apple B’s Storage Access Policy (Bucket Policy in Account B)
+Finally, Apple B also needs to make sure that Apple A’s role is allowed to write into Apple B’s storage if the data is being copied or modified.
+
+Apple B will configure a policy on its own storage system to accept data coming from Apple A’s role. This is like Apple B saying: "I’ll accept data from Apple A's trusted role, but only if it’s the right role."
+Summary of the Process:
+Apple A creates a role with permissions to access its data.
+Apple A sets up a trust relationship, allowing Apple B to use the role and access Apple A's data.
+Apple B assumes the role to access Apple A’s data and perform the required actions.
+Apple B ensures that its own storage accepts data from Apple A's trusted role by configuring a policy.
+Conclusion:
+In this analogy:
+
+Apple A creates the role and sets the permissions.
+Apple A also defines a trust relationship, saying that Apple B can use the role to access its data.
+Apple B assumes the role to access Apple A’s data and possibly update its own storage (just like cross-account replication in AWS).
+Apple B has to ensure that its storage allows the data from Apple A's role, just like how the bucket policy in Account B ensures Account A's role can replicate to the destination bucket.
+This is similar to how AWS S3 cross-account replication works with roles, trust relationships, and bucket policies.
+
+
+
+
+
+
+
+
+
+
+
+
+############################################################################
+Private hosted zone and public hosted zone  ;
+
+Private hosted zone: This will not face the internet . The domain name that created in the route53 with private hosted zone will be associated with our VPC. so this domain name will be work withhin that VPC. so its privatly hosted. It cannt be accessed through outside. So only within that VPC we can able to access that domain . outside the vpc also we cant able to access.   NO need to buy the domain name and all. 
+
+
+
+Public hosted zone : this is usual thing that we do, purchase the domain name and configure in the route 53 which can be access via internet
+
+
+END
+
+
+
+
+How can a current instance be added to a new Autoscaling group?How can a current instance be added to a new Autoscaling group?
+
+42. What are the different types of instances available?
+Below we have mentioned the following types of instances that are available:
+
+General-purpose
+Storage optimize
+Accelerated computing
+Computer-optimized
+Memory-optimized
+
+4. Differentiate between vertical and horizontal scaling in AWS.
+The main difference between vertical and horizontal scaling is how you add compute resources to your infrastructure. In vertical scaling, more power is added to the existing machine. In contrast, in horizontal scaling, additional resources are added to the system with the addition of more machines into the network so that the workload and processing are shared among multiple devices.
+
+Amazon VPC Flow Logs:
+
+Amazon VPC Flow logs collect information specific to the IP traffic, incoming and outgoing from the Amazon Virtual Private Cloud (Amazon VPC) network interfaces. They can be applied, as per requirements, at the VPC, subnet, or individual Elastic Network Interface level. VPC Flow log data is stored using Amazon CloudWatch Logs. To perform any additional processing or analysis, the VPC Flow log data can be exported using Amazon CloudWatch. 
+
+AWS CloudTrail: 
+
+This AWS service facilitates security analysis, compliance auditing, and resource change tracking of an AWS environment. It can also provide a history of AWS API calls for a particular account. CloudTrail is an essential AWS service required to understand AWS use and should be enabled in all AWS regions for all AWS accounts, irrespective of where the services are deployed. CloudTrail delivers log files and an optional log file integrity validation to a designated Amazon S3 (Amazon Simple Storage Service) bucket once almost every five minutes
+
+18. What is a DDoS attack, and how can you handle it?
+A Denial of Service (DoS) attack occurs when a malicious attempt affects the availability of a particular system, such as an application or a website, to the end-users. A DDoS attack or a Distributed Denial of Service attack occurs when the attacker uses multiple sources to generate the attack.DDoS attacks are generally segregated based on the layer of the Open Systems Interconnection (OSI) model that they attack. The most common DDoS attacks tend to be at the Network, Transport, Presentation, and Application layers, corresponding to layers 3, 4, 6, and 7, respectively.
