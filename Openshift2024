@@ -1,0 +1,2238 @@
+OPENSHIFT:
+
+oc get clusteroperators  -- list the operators that are installed in openshift.
+oc get clusterversion  -- show the cluster version 
+oc login -u srini endpoing
+oc project -- show which project you are currently in
+oc get project --> show all the projects   or oc projects 
+oc whoami --> it will show which user you are currently logged in 
+oc new-project myproject ----> creating new project
+oc project projectname --> switiching to other project
+oc whoami --show-console --> show the webconsole link
+crc console --credentials --> which will show our admin and local password when the crc is created
+crc console -- which will directly open the link in webbrowser
+oc status --> will show the current status of the project which you are currently logged in 
+oc status -n projectname  --> we can also give it in project wise name which will show how my deployments are currently running and how many pods and when its deployed
+oc status -A  --> which will show the status of all the projects
+oc adm top node -- it will show all the node cpu and memory that are used and how much cpu and memory it has 
+oc describe nodes nodename
+oc get events --field-selector type=warning -- this will show the warning events that occurred in the namespace
+kubectl explain service  -- which will show what version the service is  eg: Version: V1 
+kubectl get pod --show-labelS  -- WHICH will show the labels of the pod 
+
+inside the pod the containers are placed.  Containers will not have IP address, pods only have ip address which will get it from the node. Each node will have scope of ip address that will be distributed to the pods. oc get pods -o wide. where we can get the ip address of the pod. which is internal ip address (private)
+
+nord port- 30000 to 32767
+
+oc new-app --name=myapp --image=openshit/hellopenshift   -- for app creation
+oc get pods or oc get pods -o wide ---> which will show the pods information 
+oc logs deployment/deployment name
+oc get pod podname -o yaml --> where we will get all the pod details in yaml format
+oc get pod podname -o json --> we will get the details in json format
+oc describe pod podname --> we can also get the pods details with this command
+oc get pods -o custom-columns=NAME:.metadata.name,RSRC:.metadata.labels --> we can grep the output with specific column
+oc get pods -l deployment=myapp  --- which will display the labels (-l) for the deployment myapp --> listing the pods 
+oc get deployment myapp -o yaml > myapp.yaml --> which will export the details of myapp deployment to yaml file. (in first place we will used to deploy the app with the yaml file right the same format will be in the myapp.yaml file)
+oc apply -f myapp.yaml  -- which will create the resources that specificed in the yaml file. 
+
+oc get secrets -- will display the secrets name
+oc extract secret/secretname --to=./tmp  which will extract the secret to the path /tmp
+oc extract secret/secretname  - which will extract the secret to the current directory.
+
+
+openshift uses imagestream to manage images
+images are stored in openshift image registry or external registry like quay.io or docker hub
+
+oc get imagestream -n openshift   -- which will list all the image stream inside the openshift namespace which will be default created while creating crc or openshift
+
+oc describe imagestreamname -n openshift  --> which will describe the imagestream which will have image name  and image id and other info
+and to get the information about that image we can use the below command
+
+oc describe image imagename 
+
+CREATE AND DELETE PROJECT:
+
+oc new-project test
+oc describe project test --> describe the project and their details
+oc delete project test
+
+EXAMINE RESOURCES AND CLUSTER STATUS:
+
+oc get deployments  --> will list the deployments
+oc get deployments -n openshift --> will list the deployments in that openshift namespace
+oc get pods --all-namespacecs --> which will display all the pods in the cluster
+
+oc get nodes --> which will display all the nodes that are joined with the cluster
+oc get componentstatus  -- which will show the components are in healthy status are not , components are like etc, scheduler,controller-manager
+oc adm top nodes --sort-by=cpu  -- high cpu nodes will be displayed
+oc adm top pods --> list the cpu and memory usages on the pods, we can also use -n for namespaces	
+oc adm top pods -l app=myapp  - which will show the specific utilization of the particular app
+
+LOGS:
+
+oc logs -f bc/buildconfigname  --> will will show the current logs (-f) will show the the logs in realtime
+oc logs -f deployment/deploymentname
+oc logs deployment/deploymentname -version=version number
+oc logs -f pod/podname --tail=10  --> this will show the latest log in last 10 lines, we can use without tail 
+oc adm node-logs nodename  -- logs for the node
+oc adm node-logs --role master
+oc adm node-logs --role master -u kubelet ( this will show the logs that are related to kublet)
+oc describe pod/podname
+ 
+Containers will be generally run in non-root users for security reasons.
+
+oc new-project log-demo  / oc new-app --name=demo-log --docker-image=ngnix / oc get pods / oc logs -f podname
+container will go in crashloopbackoff, checking the log we came to know it is permission issue.
+mostly crashloopbackoff will come if live prob failure or application 	failed to start for any reason 
+
+imagepullbackoff -- this error might come if our iamge name is set wrongly , or invalid tag, or invalid permission 
+registry unavailable--
+errimagepull --
+killcontainererror
+
+pending- due to resource quota, request and limit set, node lack of resources, also we have to check the kube-scheduler component
+
+so first we have to find the container name ( note: pods are collections of container. we only have the pod name not the continer name )
+oc describe pod/podname ( which will show the container name that runs in the pod)
+oc logs -f containername -c log-demo   -> not sure what is -c is used for check on this . that is not project name . check the logs and fix it
+
+ETCD:
+its a central store for cluster configuration and state information. its main components . to check the healthstatus of this components , below commands can be used
+
+oc get pods -n openshift-etcd
+oc -n openshift-etcd rsh etcd-crc  -- which will login to the pod and we can run the command "etcdctl endpoint health" which will show the status
+
+oc logs -n openshift-etcd etcd-crc  which will show the etcd logs ( this is for crc, have to check for production) i think just we can give the pod name that running on the prod
+
+oc get clusteroperators  -> which will show all the operator status (operators are nothing but all the components that are used for running the cluster like kube-controller , kube-scheduler, etcd, etc) which will also show the versions of the operators that are installed 
+
+oc version - > which will show the version on openshift client version , server version and kubernets version
+
+
+	TROUBESHOOT COMMON PROBLEMS:
+
+Failed to pull images: Means container images cannot be retrieved from the registry 
+exceeding resource limit: we have to check the cpu and memory resources to run the application   use "oc adm top pod" 
+Pod stuck in pending statee :  May be this can be happend due to insufficient resources, or taint and toleration miss matches or affinity/anti affinity 
+
+pod repetedly evicted or terminated : this may be caused due to resource contraints or node failure  . use the below command 
+
+oc get events --field-selector involvedObject.kind=pod,involvedObject.name=podname   -- get the events for the pod
+
+Pod stuck in a terminating state:  this means the pod is in deletion process but it cannot be deleted due to some reasons. like network issues or problem with the container runtime(this means docker or podman i think so) . use oc delete pod 
+
+CLUSTER LEVEL ISSUES:
+
+ETCD issues: its a main components of the openshift cluster, if this fails the whole cluster will be in problem . common problmes will be high latency, network issues , or disk issue
+we can use etcdctl command line tool for checking the status ,view metrics and analizing the logs.
+
+Network issues : we can test the connectivity with the other pods using " oc exec mypod --ping anotherpod"
+
+****** TROUBLE SHOOT COMMAN CONTAINER, pod, and cluster events*****************8
+
+Just try to run a pod in with a node selector for eg" nodeselector {"nodename=crc"}  the pod will be placed under the node which is labeled as nodename=crc
+but we dont have any lablel placed in the node , so the pod will be placed in pending state. so now we try to label a node and check
+
+oc label node crc nodename=crc  ( check how it labelled)
+
+now the node is lablled and the pod will be start running
+
+CHECK how to integrate out AD with openshift for users
+
+WE do have htpasswd for user authentication in the openshift, we have to add the users and password there so that we use that as authentication. we can use ldap also as authentication . we have to do changes in the authentication deployment which is running in openshift .
+
+oc get pods -n openshift-authentication .  export the code in yaml and make changes accordingly and then re apply the yaml file .
+
+
+Below are the commands that we used to configure the htpasswd identiy provider ( in realtime we use ldap for authentication the openshift)
+we have to create a htpasswd file and then integrate with the openshift . inside the htpasswd we have the users and password
+
+htpasswd -c -B -b htpasswd alice redhat123   here -c is for creating new file htpasswd and -B for encrypting the password and -b for wrting the password no command line while entering the details
+in this file now user alice and the password redhat123 is added
+
+Lets add few more users into the htpasswd file
+htpasswd -B -b htpasswd bob redhat123    -- here c is not used because the file is already created. LIke this create 4 users 
+cat htpasswd -- it will show the user and password in encrypted format
+
+Now we have to say the openshift oauth to use this authentication file 
+
+go to UI and admin -> cluster setting > configuration -> oauth 
+in this configuration we can see various identity providers, we have to choose the HTpasswd and upload the htpasswd file there and click add.
+
+this is will create a secret in openshift-config namespace.   check the namespace openshift-config and there will be secret created .
+now logout the UI and try to login using the htpasswd users . we didn't assign any role yet , we will do this later.
+
+NOW WE CAN SEE hoW WE cAN do THIS IS CLI..
+
+we already created htpasswd in above method, so we can use that same. and now create a secret using htpasswd 
+oc create secret generic my-htpasswd-secret --from-file=htpasswd=htpasswd -n openshift-config ( we have to create this in openshift config namespace )
+Now we need to configure the oauth to use the secret that we created
+oc get oauth cluster -o yaml > oauth.yaml
+now edit they yaml  , go to spec - identityproviders and enter our secrets name  ( which will be used as authentication)
+once changes done "oc replace -f oauth.yaml  (check why replace is used) applying the yaml file again .
+oc get pods -n openshift-authentication -- it will show the pod will terminate and create a new one. and try to login with new user 
+
+Delete users in htpasswd:
+open the htpasswd file and remove the user line and save it . Now we have to update the secret file again by giving below command. 
+oc create secret generic htpasswd-hmcx --from-file=htpasswd --dry-run=client -o yaml -n openshift-config | oc replace -f -
+
+Already we created a secret above in the first step. so we have to replace the secret with the one that we created now. So only we used the old secret name htpasswd-hmcx as a secret name again. once done we have to to replace and it will be updated. this alone will not remove the user , we have to do another step 
+
+oc get users and then oc delete user ted. now the user teed is deleted. Again when we execute oc get identity  we will see the ted user
+oc delete identity htpasswd:ted  - which will delete that . now the user is deleted we can check it by oc get user and oc get identity.
+
+
+******************************MODIFYING USER PASSWORD ************************************
+same as creating the new user in htpasswd
+htpasswd -B -b htpasswd alice newpassword   we changed new password for alice user. Now we have to update the secret. use the same command above we used to update the secret before
+
+CREATING AND MANAGING GROUPS IN OPENSHIFT
+
+
+oc adm groups new developers                        ---creating a new group
+oc adm groups new developers alice bob Charlie     -- adding new user while creating new group
+oc adm groups add-users developers David Emily    -- adding user in existing group
+oc adm groups remove-users Emily David            -- removing user in group
+
+oc adm policy add-role-to-group view developers -n myproject   --> view is role , developer is group name 
+
+MODIFYING USER AND GROUP PERMISSION : RBAC
+
+role -- collection of permission that is assigned for user or a group.
+Two level of RBAC -- cluster RBAC and local RBAC
+Roles defined by verbs( get, list, watch , create, update, patch, delete)
+Role bindings: connect roles to users or group.  ( roles are only set of roles , role binding is biding the role with user or group)
+
+oc describe clusterrolebinding.rbac   -> to view the role binding at cluster level
+oc describe rolebinding.rbac     --> show the role binding in project level
+oc describe rolebinding.rbac -n myproject --> show the role binding in the specific project level
+
+default roles in openshift.
+
+admin: project admin acess
+basic-user: view basic info ( read only)
+cluster-admin: full superuser access
+cluster-status:	view cluster status ( readonly)
+cluster-reader: readonly access across cluster
+edit: modify objects in project ( no role change access)
+self-provisioner : create own projects
+
+Assigning roles :
+
+oc adm policy add-role-to-user <role> <user> -n <project>            add role to user in project
+oc adm policy remove-role-from-user <role> <user> -n <project>    remove role for user in project
+oc adm policy add-role-to-group <role> <group> -n <project>            add role to group in project
+oc adm policy remove-role-from-group <role> <group> -n <project>    remove role for group in project
+
+oc get clusterrolebinding -o wide    which will show all the clusterrole  
+go and get the self-provisioning cluster role 
+oc describe clusterrolebinding.rbac self-provisioner -- which will show the "self-provisioner" cluster role details. will show wich user and group having this cluster role.   we got result as all system:authenticated:oauth groups having this role assigned. that means all the oauth users are able to create project. 
+
+now we going to remove the system authenticated oauth from the self-provisioner role. 
+oc adm policy remove-role-from-group self-provisioner system:authenticated:oauth   - now we removed thr group from that rrole. now users cannot create a project.
+
+login to kubeadmin nd check the who can create the project by giving the below command
+ oc adm policy who-can create project    -> it will show list of group that are having access to create the project
+
+oc get rolebindings -o wide   --> shows the roles and which user and groups are binded with that role
+oc policy add-role-to-user admin bob -n permissions (new project that we created)
+again check oc get rolebindings -o wide. see the differences.
+
+oc get groups -- it will list the groups 
+
+PROJECT Quotas:
+**************
+oc new-project quota-demo
+oc create quota custom-quota --hard=cpu=2,memory=10Gim,pod=5     
+oc get quota   -- it will list all the quota that we created. put -n to specify the namespace in any cmd
+oc describe quota custom-quota   -- it will describe the custom quota that we created. 
+
+previously we have run the application in the cli without mentioning any cpu and memory details . just we do oc new-app and create an application. But now we cant create an application in that manner we have to mention and the cpu and memory allocation , otherwise it will not run. once the quota is created we mandatory ly have to mention the cpu and memory limit. 
+
+so now we create a deployment.yaml file to deploy the application with cpu and memory limit, now it is running
+oc scale deployment/quota-test --replicas=5   --> it will increase the replicas from 4 to 5   (previously it was 4)
+
+CONFIGURING CLUSTER RESOURCES QUOTA
+
+oc new-project project-1 /oc label namespace project-1 environment=production
+oc new-project project-2 / oc lable namespace project-2 environment=production
+
+oc create clusterresourcequota production-quota --project-label-selector=environment=production --hard=cpu=10 --hard=memory=20Gi
+oc describe appliedculsterresourcequota -n project-1    -- it will show the cpu-10 and memory=20  , same willbe in project 2 .  so whatever the namespace that are labeled with environment=production will get the same clusterresourcequota
+
+
+CONFIGURING PROJECT LIMIT RANGE:
+***********************************
+
+resource quota --> where we can set the limit for no of pods, memory, cpu, replicas, configmap etc. which can be applied for namespace . so total namespace should have to be limited by the above resources
+
+limit range:  is nothing but , we can set the limit range for each pod and container, so each pod should have atleast this much memory or it should not exceed this much memory or cpu.  like this we can mentione.
+oc describe limitranges my-limits
+
+oc new-project limit-range-demo	
+create a yaml file for limit range 
+
+apiversion: v1
+kind: LimitRange
+metadata:
+  name: demo-limit-range
+spec:
+  limits:
+  - default:                                     --- this is default limit range, if a pod does not mention any limit this will be applied
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:                              -- this is default request range, if pod does not mention any request this will be applied
+      cpu: 100m
+      memory: 256Mi
+    max:                                         -- this is the max value that single pod can be assinged
+      cpu: 1
+      memory: 1Gi
+    min:                                         -- this is the min value that single pod can be assinged
+      cpu: 50m
+      memory: 128Mi
+    type: Container
+
+This can be assigned to the project , so above limits will be applied to container vise . the yaml file named as limitrange.yaml
+
+oc create -f limitrange.yaml  - check apply/create difference . and also check annotation meaning
+oc get limits  -- it will show demo-limit-range . we can also do describe
+
+create an sample application by below code - limitrange-test.yaml
+
+apiVersion: v1
+kind: pod
+metadata:
+   name: test-pod
+spec:
+   containers:
+   - name: test-container
+     image: bitnami/nginix
+     resources:
+       limits:
+         cpu:2
+         memory: 2Gi
+
+oc create -f limitrange-test.yaml --> we get error because the cpu limit is 2 , but in quoto we set max as 1
+we can change the cpu and memory rang and try to apply it will work
+
+CONFIGURING PROJECT TEMPLATES:
+ 
+IN this , whatever new project we created , we can set a resource quota and limit quota by default. so whenever the new project is created it will be created with that quota that we mentioned in the config. 
+
+oc adm create-bootstrap-project-template -o yaml > template.yaml  --> this will create a project teamplate and save it as template.yaml. in this we can do the modification and apply it .
+edit the template.yaml file and paste the below code. already in that file there willbe many lines so paste the below code accordingly
+
+-apiVersion: v1
+ kind: ResourceQuota
+ metadata:
+   name: ${PROJECT_NAME}-quota
+ spec:
+   hard:
+    cpu: "2"
+    memory: 5Gi
+    pods: "40"
+-apiVersion: v1
+ kind: "LimitRange"
+ metadata:
+   name: ${PROJECT_NAME}-limit-range
+ spec:
+   limits:
+   -type: Container
+    default:
+      cpu: "200m"
+    defaultRequest:
+      cpu: "10m"
+
+Once the code is placed in that template , we have to apply this in the oepenshift configuration namespace 
+
+oc create -f template.yaml -n openshift-config
+now we have to tell the project.config.openshift to use this template while creating the project for that follow the below cmd
+
+oc edit projects.config.openshift.io/cluster   -- it will open the yaml file. under the "spec: {}" block enter the template name that we created
+
+spec:
+ ProjectRequestTemplate:
+     name: project-request   (this is the template name that we created and applied) .
+
+once this applied.   this wil restart the apiserver in the openshift-apiserver namespace
+oc get pod -n openshift-apiserver -w  
+
+now create a new project and check whether the default configuration is applied by below commands
+oc get quota  and oc describe limitrange   -- these will display the quotas.
+
+NOTE: in general we have some default cluster role that created by openshift. If we try to change the configuration for the cluster role using command line  it will work , but when the cluster is restarted again it will be back to default. in that case we have to edit the particular cluster role and we have to give false to auto update. 
+For eg: we have clusterrole called self-provisioner ( which will give access to create project)
+if we remove the clusterrole "self-provisioner" for system:authenticate:oauth  group by giving below command , it will work . but if the cluster restart it will be back , so we have to do the above process to be stable
+
+system:authenticate:oauth in this group all the user will be there which we created by htpasswd
+
+oc adm policy remove-cluster-role-from-group self-provisioner system:authenticate:oauth - now all the user cannot able to create the project. we have to mention it specifically  if any user need this access. by giving them access 
+
+oc get clusterrolebinding self-provisioner -o yaml  --> which will list the user or group which have been assigned for this self-provisioner role
+
+
+oc create role viewnagas --verb=get,list,watch --resource=pods,deployment,imagestreams -n nagas   -- create read-only premissions role for particular resources like pods deployment imagestreams. 
+
+
+if the role is created in testing namespace and we want the user srini to be assigned that role in the different namespace(test1)  we can go with 
+
+oc adm policy add-role-to-user myrole srini --role-namespace=testing -n test1
+
+DEPLOYMENT STRATERGIES :
+*************************
+
+Rolling update : application update we use this stratergy .  in yaml itself we can defnd the max surge :25% and max available:25%
+
+oc new-project deployment-demo / oc apply -f httpd-deployment.yaml   - we have this yaml already . in this apache is 2.4 and we have 3 pods running on this as replica
+
+change the apache to latest in yaml file and again run oc apply -f httpd-deployment.yaml  and then check the status by below command
+oc rollout status deployment/httpd-deployment  -- it will show the status of the updating application. if we have to rollout to the previous version
+oc rollout undo deployment/httpd-deployment --to-revision=1    -- this will rollout to previous version
+
+oc rollout history deployment/httpd-deployment  --it will show all the rollout history , and we can rollback to the version that we need
+oc scale deployment/httpd-deployment --replicas=5
+oc rollout pause deployment/httpd-deployment   -- to pause the deployment and we can use "resume" to resume the deployment
+
+replicaset controller is used to manage all the replicas, like all the pod where to place and which node the pod to be placed based on the label, scalling and delting the replicas, all thse things will be taken care by replicaset controller
+
+
+LABELS AND SELECTORS
+******************
+
+labels are key-value pairs , labels are defined in metadata section of manifest file
+selectors: selectors query and filter the resources based on their lables. 
+
+
+Lables- we can use this for identifying the env like prod ,dev, test like that and also we can use as frontend, backend, like that and also specific team and department
+
+labelled-pod.yaml
+
+apiversion: v1
+kind: pod
+metadata:
+  name: my-labeled-pod
+  labels:
+    app: my-app
+    environment: production
+    tier: frontend
+spec:
+  containers:
+  - name: my-container
+    image: bitnami/nginix
+
+
+
+To show the label of the pods we can use , oc get pod my-label-pod --show-labels
+To display all the pods that have the label "app=myapp" we can use, oc get pods -l app=myapp   which will display all the pods that have this label.
+oc get pods -l 'environment in (production, staging)'  this will list all the pods which have both production and staging lables with environment.
+
+oc get nodes -L env - this will show all the nodes which have the label env
+oc label nodes master01 env=dev  - tthis will apply the label for that node.
+
+
+SERVICE:
+
+Services are connected to pods using lables and selector. services are created on top of deployment to provide access
+clusterip,nodeport,loadbalancer --- check on this deeply in youtube more
+cluster ip : used to communicate within the pods and cluster
+pods can access services using their DNS names . format: servicename.namespace.svc.cluster.local .
+
+ROUTES:
+Route maps the external url to internal services 
+route require services
+ YAML FILE
+
+apiversion: route.openshift
+kind: Route
+metadata:
+  name: my-http-route
+spec:
+  host: my-app.example.com
+  to:
+   kind: service
+   name: ticketting-app-service
+
+CLI : oc expose service ticketing-app-service --hostname=my-app.example.com
+
+METALLB and MULTUS
+
+Loadbalancer for baremetal Kubernetes cluster. provides loadbalancer implementation for non-cloud environments. USes standard protocal BGP ARP. 
+allocates external IP address from a configured pool.
+
+Install the metal lb from the operators in the openshift. and apply the below yaml to allocate the external iP to the particular namespace, which can be used for that namespace alone 
+
+kind:IPaddresspool
+metadata:
+  namespace: metalb-system
+  name: exampleippool
+  labels:
+    zone: east
+spec:
+  addresses:
+  - 192.168.1.100-192.168.1.120     ( from 100-120 IP it will be allocated to this namespace)
+
+so when we creating the services if we give the type- loadbalancer then it wil take the ip from them above pools.
+
+Multus: which is used for attaching multiple network interface to pods.
+
+Secrets:
+
+secrets are objects that store the sensitive data in key-value format . securely pass the sensitive information to application without exposing it in plain text. eg:, password, authentication token, ssl/tls certificate, ssh keys, database connection strings. 
+
+secrets are base64 encoded stored in etcd. 
+oc create secret generic my-secret --from-literal=username=myuser --from-literal=password=mypassword
+--from-literal flag allows specifying 	key-value pairs directly in the command.
+--from-file=credential.txt , we can use this for creating the secrets from file. 
+
+Openshift provide specific secret types for comman use cases. eg,docker registry secrets, TLS screts.  For docker registry secret below is the code
+
+oc create secret docker-registry my-registry-secret --docker-server=registry.example.com --docker-username=myuser --docker-password=mypassword --docker-email=myuser@example.com
+
+pods can use secrets, the command way to use the secrets is using env variable in the manifest file. 
+
+Kind:pod
+metadata:
+  name:my-pod
+spec:
+  containers:
+  -name: my-container
+   image: myimage
+   env:
+   -name: USERNAME
+    valueFrom:
+      secretKeyRef:
+         name: my-secret   -- in the "my-secret" secret  key=username has the value myuser 
+         key: username         
+  -name: PASSWORD
+    valueFrom:
+      secretKeyRef:
+         name: my-secret   -- in the "my-secret" secret  key=password has the value mypassword. 
+         key: password
+
+in the above code , we set env variable to the pod  USERNAME and PASSWORD.  the USENAME value will be called from the secret and set as USERNAME=myuser and the PASSWORD=mypassword.  The secrets have this key-value pair which will be called inside the pod as env variable. the secret has been created before please check above. 
+
+oc set env --from=secret/mysecret dc/myapp   --> setting the env variable for the deployment from the mysecret 
+
+we can also mount the secrets using manifest file
+
+Kind:pod
+metadata:
+  name:my-pod
+spec:
+  containers:
+  -name: my-container
+   image: myimage
+   volumeMounts:
+   - name: secret-volume
+     mountPath: /etc/secrets
+   volumes:
+   -name: secret-volume
+    secret:
+      secretName: my-secret
+
+"my-secret" secret has been mounted as volume in /etc/secrets
+
+cli command would be : oc set volume pod/mypod --add --name=secret-volume --type=secret --secret=name="my-secret" --mount-path=/etc/secrets
+
+
+oc create secret docker-registry my-registry-secret --docker-server=registry.example.com --docker-username=myuser --docker-password=mypassword --docker-email=myuser@example.com
+
+here we created the secret for the docker hub , which can be called while creating the pod manifest file. so the image will be downloaded using that cred.
+
+kind: pod
+metadata:
+  name: my-pod
+spec:
+ containers:
+ - name: my-container
+   image: privte-registry.example.com/my-image
+   imagePullSecrets:
+   - name: my-registry-secret
+
+
+   
+CONFIGS maps:
+
+COnfig maps and secrets are same, the only difference is the secrets are in base64 encoded, but the configs are un plain text. all the other process are same in config and secrets like creating and mounting and other tasks.  non-sensitive information can be saved in this. application parameters, database connection details, configuration files, command line arguments, environment variable. these can be saved in the config maps.
+
+oc create configmap my-config --from-literal=APP_ENV=production --from-literal=APP_DEBUG=false  .
+we can also use --from-file to use the files or directory which as key-value datas.
+oc describe cm my-config    -> to describe the config map that created. and also it will show that data that in configmap in plain text
+
+to use the configuration map as an environment variable in the pod we can use "oc set env pod/mypod --from=configmap/my-config
+to mount the configmap as file in the pod " oc set volume pod/mypod --add --name=config-volume --configmap-name=my-config --mount-path=/etc/config
+
+how we can call the env as config map in the pod manifest file. 
+
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  APP_ENV: production
+  APP_DEBUG: "false"
+
+---
+apiVersion: v1
+kind: pod
+metadata:
+  name: my-pod
+spec:
+ containers:
+  -name: my-container
+   image: my-image
+   command:["my-app"]   --- this is executable file just imagine
+   args: ["--env=$(APP_ENV)","--debug=$(APP_DEBUG)"]    -- just running this arg on the above executable file. 
+   envFrom:
+    -configMapRef:
+      name: my-config
+
+
+
+create a new project, and create index.html file .
+
+<html>
+<body>
+<h1> Hello from Openshift! </h1>
+</body>
+</html>
+
+oc create configmap nginix-config --from-file=index.html
+
+create cm-nginix-pod.yml
+
+apiversion: v1
+kind: pod
+metadata:
+   name: nginix-pod
+spec:
+   containers:
+   - name: nginix
+     image: bitnami/nginix
+     volumeMounts:
+     - name: config-volume
+       mountPath: /app
+    volumes:
+      - name: config-volume
+        configMap:
+           name: nginix-config
+
+
+apply this yaml file and also oc port-forward ngnix-pod 8080:8080 . now we will get the http page as hello from openshift. 
+
+PERSITANCE STORAGE:
+
+Persistance storage allows data to persist across pod restarts. Openshift supports block storage and file storage for different application requirements.
+
+Block storage:
+ provides raw blocks that can be attached to pod, eg: AWS EbS, GCE persistence disk, VMware vsphere. suitable for high performance, low latency, applications like database  and big data workloads,
+
+File storage:
+ backed by a filesystem and can be mounted into a pod.  eg; NFS, GlusterFS,cephRBD. sutiable for application that required shared access to files.
+
+Persistance VOlume:
+  Storage resources provisioned by cluster administrator . Represent available storage capacity in the cluster. 
+
+yaml
+
+kind: persistanceVolume
+metadata:
+ name: my-pv
+spec:
+  capacity:
+   storage: 5Gi
+  accessModes:
+     ReadWriteOnce
+  nfs:
+   server: nfs-server.example.com
+   path: "/data"
+
+Persistance volume claim:  the storage that can be claimed from the pv and that can be used in pod .
+
+kind: persistanceVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+   requests:
+    storage: 2Gi
+
+Persitance volume claim that used in pods
+
+kind: pod
+metadata: 
+ name: my-pod
+spec:
+  containers:
+  - name: my-container
+    image: myimage
+    volumeMounts:
+    - name: data-volume
+      mountPath: /data
+   volumes:
+   - name: data-volume
+     PersistanceVolumeClaim:
+       claimName: my-pvc
+
+
+STORAGE CLASS:
+
+
+Storage class allow administrators to define different type of storage with specific parameters and provisioning mechanism. Offers developers to use various storage options with different characteristics and performance requirements.
+
+Benefits of storage class:
+provide flexibility for different teams working on different application eg:, high-performance storage ssd for database, cost-effective spinning disks for log storage.
+
+in amazon we have different type of storage like , gp2,gp3, io1,sc1  these are used for different usecases, like sc1- used for less frequently access data, where st1- is used for for large sequential workloads, where gp3 is used for general purpose SSD storage for better performance an cost-effective than gp2.   
+
+so in eks , when we create yaml file in pvc we can just use the word storage class gp2 or anything , it will automatically create the pv from the EBS volume as mentioned class and attached it in the pod.  so we can use this for different type of use cases where our service need which type of storage class so that we can save the cost. all these are possible with EBS CSI driver which is pre-installed in EKS. this ebs csi driver play the major role like creating thee ebs volume and deleting the volume , whatever we doing in the eks. 
+
+we can also create our own storage class, using NFS and other. 
+
+IN the case of normal Kubernetes cluster. we have can use the NFS as storage class. In our environment we have large nfs volume lets take as 10tb storage which is managed my storage team. so for each time in our kubertes while creating PV we have to request the storage team for create nfs share and export 10gb of volume  so that they will do and then we can use it in pv. but for each time we have to ask themfrequently . in this case storage class is used. like we ask the storage team for 2 tb of volume and then will share and export. now we convert the 2tb of volume as storage class in our eks cluster and this can be used in pvc directly in our Kubernetes. (note nfs server is not part of Kubernetes cluster it is separate one)  . we need to install the nfs provisioner in seprate namespace and have to mention the nfs server ip address and the mount path that has been given to us . 
+
+create a new namespace and install the nfs provisioner using helm .  once done just use kubectl get storageclass it will show our storage class that we created by installing the nfs provisioner 
+once we create a pvc, it will automatically create pv for it.  so all the pv will be created as folder in our nfs server .
+
+
+note: for the storage class ebs, it can only used in stateful set because the ebs can be only attached with one node at a time and one pod, so the application which has 1 or more replicas then ebs storage class will not work , but EFS will work , we have to install EFS CSI Driver and we have to mention the storage class that to create pvc in efs (mention in the provisioner part in storage class yaml file that efs should be provisioned if any volume is asked) so that storage class we can call in pvc
+
+why statefulset is ok with ebs , because each pod has unique volume , so it is not problem each ebs can be attached with each pod.
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+
+
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany   # EFS allows multiple pods to mount the volume
+  resources:
+    requests:
+      storage: 5Gi    # Size of the volume, though EFS is scaleable
+  storageClassName: efs-sc   # Referencing the StorageClass you created
+
+
+
+
+
+
+Statefullsets:
+  
+
+Helps to deploy and manage set of pods with stable identities  and persisitance storage. 
+Each pod in a statefullset has a stable hostname that persists across any reshcheduling or restart. and also each pod has a unique persistence storage which will not be shared with other pods. 
+commonly used for pods that required stable identities and unique storage. such as MySQL, mongodb database, kafka message queues. if each pod requires its own unique pv then statefulset is the recommended choice
+In kind we should use statefulset  "kind: statefulset"  in "service" section we have to mention none to clusterIP "clusterIP:none"  this is called headless service. 
+
+headless service is mainly used for " the client need to access to the particular pod which does not want to goes through loadbalancer or cluserIP, because loadbalancer will connect with all the pods and it will randomly pick the pods" so if we use headless service the pod can be directly accessed by the pod dns name by the client.  This are mostly used in db cases. like each shards will be in the different pod, if we have to connect with the particular pod means we need the exact pod ip or dns name to connect with. IN this case we use this headless services.
+The client queries the headless service dns name to get the latest ip of the pods, if the pod get restarted the details will be automatically updated in the headless servicec , so when client queries it will give the updated one. and it will also have ttl value to save the dns record.
+
+each pod has its own dns as we before know, but it will be in the form of pod-0.headlessservicename.namspacename.svc.cluster.local.  for example we created a namespace test and created headlesservicename as service-test and we have three pod which named as pod0,pod1,pod2 then the dns name will be look like pod-0.service-test.test.svc.cluster.local  like these all the three pods will have its own identity.  and also client can connect to particular pod with that dns name to get the data (distributed database. ) using headless service.  
+
+in sateful set if the pod is deleted the pv or pvc will not be deleted the data wil be there. if the pod comes again it will connect to the pv again automatically
+
+Check other videos
+
+OPENSHIFT Routes:   
+Routes exposes services within the cluster to external services. Map external URLs to internal services. it is similar to Kubernetes ingress, but with additional features.
+implemented by shared router service running as a pod. Router pods bind to public IP address on nodes. DNS wildcards are necessary for proper functionalilty 
+IN routes we can specify service name,hostname, optional path, target port, encryption stratergy, and lables.  we can also use path based routing using the routes like ingress. '
+TYPES OF ROUTES: secure routes, insecure routes
+secure route: TLS termination	option include edge, pass-through and re-encrypt
+
+note:  client ---> route ---> application    this is process of traffic flow
+
+edge route:  IN the edge route the tls connection (secure or encryption) will be between client and route. route will terminate the tls connection and then the connection between the route and application there will be no secure connection . This tls connection will be work between the client and route only. for this edge route the ssl certification will be provided by openshift
+
+generally when we create route for our application we use "oc expose svc servicename"
+then we will get route name for our service , if we need any specific route name we can give --hostaname to enter our route name
+
+now for this encryption method we used to create route by below method
+
+oc create route edge httpd-edge(routename) --service=servicename --hostname=routeaddress(http-edge.ocp.example.com)
+
+now route will be created and we can use this link to access our site http-edge.ocp.example.com
+
+Passthrough:  this encryption  will be from client to application. so the whole connection will be secure. the connection will be terminated in the application end. for this the application will be responsible for the serving the  cert.
+
+For this we have to create the openssl cert in our side and then create secret with that cert. once secret created mount them as volume in the pods. after then we have to create route as per above we done for edge.
+once the cert created with openssl we will get trainig.key  and training.crt . to convert them as secret use below command
+oc create secret tls todo-certs --cert training.crt --key training.key    -- secret will be created and then this should be mounted as voulume in pod in the location /usr/local/etc/ssl/certs   and then create the route
+
+oc create route passthrough todo-https --service=todo-https --hostname=todo-httpsapps.ocp4.example.com
+
+
+
+re-encryption:  in this the tls encryption will be from client to route. and then route will terminate the connection and again new tls connection will be created for route to application . 
+
+
+
+
+insecure : no keys or certificates required. 
+
+oc expose service servicename ---- this is used to create route
+oc expose service servicename -l name=label --name=route  -- this is used for label name and route name 
+oc expose service servicename --hostname=www.example.com  -- to customize the url
+oc expose service servicename --port=portnumber --protocal=tcp or anything   --- specifying port and protocal
+oc expose service servicename --path=path  --> used for creating pathbaseed routing
+
+Multiple path-based routing for the same hostname
+
+oc expose service servicename1 --hostname=www.example.com --path=path1
+oc expose service servicename2 --hostname=www.example.com --path=path2
+
+ROUTE ANNOTATION:
+
+oc annotate route ----  manily used to fine-tune the route behaviour 
+
+Restricting access or whitelisting the ip address 
+oc annotate route myroute haproxy.router.openshift.io/ip_whitelist: 192.168.1.0/24
+oc annotate route myroute haproxy.router.openshift.io/ip_whitelist:<ip1> <ip2>
+
+oc annotate route myroute --overwrite haproxy.router.openshift.io/timeout=5s   --- used to set the timeout for the route  (--overwrite is used when there is already timeout is mentioned that we have to overwrite with another value)
+oc annotate route myroute haproxy.router.openshift.io/rate-limit-connection=true  - rate limiting , used to limit the conections for ddos attack like that. 
+
+oc annotate route myroute haproxy.router.openshift.io/rate-limit-connections.rate-tcp  -  used to limit the tcp connections, like this we can use for http also. 
+
+oc edit route routename --> used to edit the route directly like changing the hostname and other.  no need to re-apply it will change effect directly to the service without any intervention like pod restart and others. like we change the config like replica in the manifest in deployment right like that. 
+
+--- CHECK THE BELOW ONE deeply------
+
+Edge route:
+ client communicates securely with the edge route using TLS. Certification configured on the edge route. but communication from the edge route to application is insecure     application<----->route<-------> client    client to route is secured, but route to app is insecure. 
+
+pass-through route :
+  Route passes traffic without performing any operations. certificates are configured in the application end.
+
+re-encrypt route:
+  - client establish TLS secured connection to the re-encrypt route. TLS configured on both route and application. different certificate used to client-to-route and route-to-application communication
+
+Components of certificates:
+  private key : represents the service identity
+  public key : Handed out to the client
+  certificate authority: guarentees the realiblity of the certificates
+
+self-signed certificates
+  commonly used for internal purpose in openshift. signed by CA not widley accepted by default ( like our redis UI the page will not open directly it will ask whether we have to proceed (unsafe) your connection is not private )  but trusted within the cluster. to generate self-sighned certificate we can use openssl utility
+
+Network ingress:
+ Ingress manages external access to services within a cluster. provides rules for routing external traffic based on host or path . Ingress objects are part of the standard Kubernetes API.
+
+INGRESS CONTROLLER:  ingress controller fulfil ingres rule and handle the traffic routing. openshift supports both ingress and routes objects
+routes offer more advanced features and flexibility.
+
+INGRESS OPERATOR in openshift: Manages ingress componenets and configuration . Automates deployment and configuration of ingress controller
+HA-proxy based router handles the external traffic
+
+CLI COMMANDS:
+ 
+oc get ingresscontrollers -n openshift-ingress-operator  -- list the available ingress controller.
+oc describe ingresscontoller default -n openshift-ingress-operator  -- to get detailed information about the default ingress controller
+oc get clusteroperator ingress  -- to view ingress operator status and configuration. to check the health status and config status of ingress controller
+oc create ingress example-ingress --rule="host.example.com/=svc-name:port" -- to create ingress resource .. here svc-name is service
+oc create ingress multi-ingress --rule="api.example.com/api=api-svc:80"  --rule="web.example.com/=web-svc:8080"
+
+HEALTH PROBE:
+
+Used for monitoring the container health and readiness. they ensure that containers are functioning properly and can handle incoming traffic.
+
+types of health probe : Liveness probe, rediness probe, exec
+
+Liveness probe:
+  Determine if a container is running and functioning as expected. If livness probe failed openshift will automatically restarts the container. 
+Rediness probe:
+  Determine if a container can handle traffic. If a rediness probe failed openshift stop routes traffic to container until it becomes ready again
+
+YAML
+
+kind: pod
+metadata:
+  name: my-pod
+spec:
+ containers:
+ - name: my-container
+   image: my-image
+   livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30      -- it will start execute this probe after 30 sec of container 
+    PeriodSeconds: 10            -- it will keep prob for each 10 sec
+   redinessprobe:
+    tcpSocket:
+      port:8080
+    initialDelaySeconds: 15
+    periodSeconds:5
+
+
+Supported test:
+  HttPGet: sends an Httpget request to specified endpoint and expect a succesfull response (status code 2xx or 3xx)
+  tcpsocket: attempts to establish a tcp connection on the specific port and consider the container healthy if the connection succeeds
+  exec: executes the command inside the container and consider the containers healthy if the command exists with zero status code. 
+
+MANAGING COMPUTE CAPACITY
+
+resource request :  which will be allocated to the pod completely. and it is the minimum requ for the pod
+resource limit:  which the pod can be use the maximum resource capacity in the limit. 
+we can set this for cpu and memory for each container to allocate the resources. this concept is used to prevent excessive resource consumption.
+
+spec:
+ containers:
+ - name: my-container
+   image: my-image
+   resources:
+     requests:
+       cpu: 100m
+       memory: 128Mi
+     limits:
+       cpu: 500m                              -- upto 500m cpu can be used by this pod
+       memory: 256Mi
+
+CLI 
+
+oc set resources deployment frontend --limits=cpu=200m,memory=512Mi --requests=cpu=100m,memory=256Mi   ... set the memory and cpu value correctly otherwise the pod wll not start if the resources is not adequate. min 64-12 mi for ram and 100 millicores for cpu should be minimum.
+
+Horizontal pod auto scalling:
+
+Scaling application: adjust the number of replicas based on the cpu and memory utilization 
+scaling stratergies of horizontal pod scalling:  adjust replicas based on the cpu utilization and metrics. Define target cpu utilization and metric threshold. Openshift will continuously monitor the applicaton metrics and scale up the replicas when the metrics exceed the threshold.
+scale down the replicas when  it is back to normal .
+
+oc scale deployment/nginix --replicas=3   -- manual scalling . for autoscaling use the below one
+oc autoscale deployment/nginx --min=1 --max=10 --cpu-percent=50   ---  the pod will be min1 , if the cpu percent reached above 50 it will scale the pod 
+
+in yaml
+
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginix-hpa
+spec:
+  scaleTargetRef:
+     apiVersion: apps/v1
+     kind: deployment
+     name: nginix
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+       name: cpu
+       targetAverageUtilization: 50 
+
+
+IMAGE STREAMS:
+
+If we have to get the images from the external repo like docker and quay.io , we have to authenticate them with our namespace and then only we can able to use those images into our namespace. For example when we try to create a new-app using the docker image, it will not work it will throw error like authenticate issue. in this case we have to save the cred of docker in secrets and then we have to link tht secret to our default service account, then it will be able to get the images from the docker and run the application . and also there is another way of linking the docker authencation in secrets,. please check the below commands 
+
+oc create secret docker-registry my-docker --docker-server docker.io --docker-username Srinivasan --docker-password yourpassword. 
+the above command will directly create a secret with our docker credentials and now we have to link this secret to service account .
+oc secrets links default my-docker --for pull   -- this will link the secret to the service account. now we can able to access the docker images and also we can import them to our image registry
+
+Other way is 
+
+first we have to login our docker using podman login with our username and password.  once we logged into our podman  using our cred this will be stored in auth.json file. so this file we going to use as secret and then link this to service account
+
+oc create secret generic my-quay --from-file .dockerconfigjson=${XDG_RUNTIME_DIR}/containers/auth.json --type Kubernetes.io/dockerconfigjson  this will create the secret as my-quay from the file auth.json where our cred as stored. now we have to link this secret to Service account as we did earlier and then we can access the images and import them 
+
+oc import-images my-img --confirm --reference-policy local --from quay.io/tejenrdran/sprinboot/hello-world:latest   -- this will pull the image from the quay.io and save this in the image registry . oc get is we can see the list.
+
+CReate an imagestream and import the images from docker to image stream
+
+oc create imagestream httpd
+oc import-image httpd:2.4 --from=docker.io/bitami/apache:2.4 --confirm   -- we can use oc import-image and also oc tag  for imagestream purpose
+
+oc tag docker.io/bitami/apache:2.4.59 httpd:2.4.59
+
+
+OPENSHIFT INTERNAL REGISTERY:
+
+We do have internal registry in openshift.  openshift-image-registry is the namespace of that.  there will be a default route . using that route we can able to import the images to that registry and export the images (route is like same as docker link  docker.io/project/image it will be same as this but link will be little big ) default-route-openshift-image-registry-apps.openshift.domain.com  it will be like this.  if the default route is not enable we have to enable it by below command.
+
+oc patch config.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge  -- this will enable the default route for the openshift image registry once enabled we can use the route link .
+
+
+
+IMAGE STREAM vs IMAGE registry
+
+openshift image registry -- it is same as repository which we have outside like docker , quay.io and other repo. this repo is created default by our openshift . 
+
+IMAGE stream: It is not repository, it will just keep track of the version of your images that you tagged. for example you taged an image from docker with image registry, it will keep tracking the docker images and also if we update any new version it will keep track of it. so we can deploy the new version to your application without downloading image from the docker. once you link the imagestream with the particular image it will keep track of all the version. which will be usefull for easy rollback to previous version and autodeployment the app with the new version if anything detected.but we have to mention it in the deployment using IMAGE CHANGE TRIGGERS to automatically update and redeploy application when a new image version is available.
+
+we can use this as ci/cd . once the code is updated in the git , our pipline will build a new image and push to the repository(whatever) once the new image push to the repo the image stream will make a track of it and update the new image to the app . if the new image that deployed to the app has some issues we can rollback to the previous version since imagestream keep track of previous image. 
+
+imagestream is collection of all the version of the image. imagestreamtag is for particular version of the image like httpd:v1 like that.
+
+How to use the images from the imagestream from one namespace(dev) to other namespace(prod) . normally if we have to use the image from the same namespace means we will use like -i http:latest   but if we have to use the image from othernamesapace(dev) means we have to call has  -i http.dev:latest  you shoud use the namespace name in the image while calling .
+
+but we need permission to pull the images from the other namespace. For that we have to create a role for the service account to have access to other namespace imagestream
+
+oc create role image-puller --verb=get,list,watch --resource=imagestreams -n dev   once the permission is set we can use the images from the other namespae.
+
+Image stream creation
+
+oc create imagestream my-image-stream   -- this will create an empty imagestream in the name of my-image-stream.
+oc tag remote-registry/myimage my-image-registry:v1   -- this will be saved under the imagestream that we created , as tagged v1. like this multiple version of this images will be stored on this imagestream.
+oc get imagestream my-image-stream   - show the details of the image stream  , for more detailed view use describe.
+oc describe istag/my-image-stream:v1   -- this will describe the particular version of the image that stored in imagestream
+oc set image-lookup myapache   
+oc set image-lookup imagestream --list.  - check what is this 
+
+Imagestream: when we use the imagestream image for pod using oc command the imagechangetrigger will be automactically enabled which can be seen in the yaml file once you created the pod using oc new-app command. but when you create a pod using yaml file and mention the imagestream image in that  it will not enable the trigger. we have to manually set the trigger for this .  eg, we have httpd:latest imagestream and that has been used in pod using oc new-app command, the exact version of the httpd:latest is 2.4.56  which has been taged as httpd:latest and that has been used in pod. so now we have new version 2.4.57 repository now we going to change that has httpd:latest which will overwrite the previous one. so now 2.4.57 is updated as latest and already we created a pod using httpd:latest will be auto update to the latest version whithout any interversion. but when we deployed app using yaml file and use the image httpd:latest ( 2.4.56 ) it will not auto update . we have to set the trigger manually by using below command. 
+the one which we created in yaml file you can see in the annotation there will be no imagetrigger will be enabled. but in oc command we created the app right check that yaml file it will be there in annotation. 
+
+oc set triggers deployment/myapp --from-image=httpd:latest -c myapp
+
+ROLLBACK TO PREVIOUS VERSION:
+
+oc rollout history deployment/myapp   - list the revisions  in this we can choose the revision and get back to the previous deployment 
+oc rollout undo deployment/myapp --to-revision=1   -- it will be rollback to the previous version.
+
+SERVICE ACCOUNT:
+
+pods automatically use service accounts to access resources, ensuring that human cred aren't involved and preventing unauthorized access. 
+
+we creating one deployment where pod getting failed to start , because the pod is trying to create a directory under /etc/ where the pod should have root access to create directory on that. normally the pod will be run in normal user , pod will not be run in root user. so to give the special access to the pod to create the directory under the /etc/ we create a service account and assign a role to that service account. that service account should be attached to that deployment so that the pod will have special access to create directory and it will start running
+
+oc create serviceaccount ex280-sa
+oc adm policy add-scc-to-user anyuid -z ex280-sa    why me mentioning -z is for denoting it is service account not a normal user. for normal user we dont give anything . so we applying anyuid policy to the service account
+oc set serviceaccount deployment/myapp ex280-sa   -- so we attach the service account to the deployment
+
+Normal user will authenticate with api server with their cred, but if application need to authenticate with api server it will use service account. 
+whenever we created a new namespace, default service account will be created automatically. and whenever we create a pod /deployment this default service account will be automatically attach with that , so that application with intract with the api. service account will be always bind with the default secrets which has some authentication token. so using that authentication token only it will going to communicate with api.  we can also create our own service account with specific roles , and bind the SA to the deployment. so that depoloyment pod have all the access and privilage that we given to the service account using roles. 
+
+oc adm policy add-role-to-user view system:serviceaccount:demo-app:my-app-sa -n demo-api
+
+view access is given to the service account my-app-sa which is in demo-app namespace. this role is to access the demo-api namespace.
+
+my-app-sa is created in demo-app namespace, so we giving view access for demo-api namespace.
+
+security context constrains (SCC)
+
+Running privileged containers
+requesting extra capabilities for a container
+using host directories as volume
+changing the selinux context of a container
+changing the USer ID
+
+These access can be given through scc like we given above "oc adm policy add-scc-to-user anyuid -z ex280-sa" so we giving the anyuid access to the service account . 
+
+Openshift provide eight default SCC:
+
+anyuid   -- we will get crashloopbackof if due to permission contraints thee pod cannot be started. 
+hostaccess
+hostmount-anyuid
+hostnetwork
+node-exporter
+nonroot
+privileged
+restricted
+
+for eg: we running a pod but its getting failed due to some permission issue or something, so we can check it by below command which scc access we can give for this pod to run or which scc is missing for this pod to run 
+
+oc get pod/podid -o yaml | oc adm policy scc-subject-review -f -   
+
+the above command will check and list which scc is required to run this pod.  like anyuid or something. and then we have to create service account and assin the anyuid policy to tht sa account and then link that sa to the deployment. 
+
+
+
+TAINT and TOLLERANCE
+
+taint and tollerencae allow the node to control which pods should (or should not be) scheduled on them
+taint - will be applied in node
+tolerance - will be applied in pod
+
+oc adm taint nodes nodename  key=value:effect
+
+Three type of effect is there  1: noSchedule 2:preferNoschedule 3 Noexecute
+
+Noschedule : without the tolerance the pod cannot be applied in the node. the pod which has the tollerence will be placed on that node
+Noexecute: this will remove all the pod which is previsouly placed in that node. if there is no tollerence mentioned in the pod. and also the new pod. 
+but no schedule only apply one the new pod which is going to be placed. but noexeecute will remove all the pod which is placed in the node already. 
+
+oc adm taint node nodename key-   -- this will remove the taint from the node which has the key that you mentioned (key-)
+
+oc describe nodes master01 | grep taints --- this will show the taints in the node  "allowed=fakse:Noschedule"
+oc adm taint nodes master01 allowed-   -- this will remove the taint from master01 which has the key allowed. 
+
+CREATE selfsigned certificate for secure route:
+
+openssl genrsa -out mykey.key 4096             -- creating mykey.key cert using opensssl
+openssl req -new -key mykey.key -out mycsr.csr -subj "/C=US/ST=NC/L=Raleigh/O=RedHat/OU=RHT/CN=hello.apps.ocp4.example.com"  - this will create mycsr.csr
+openssl x509 -req -days 366 -in mycsr.csr -signkey mykey.key -out mycert.crt  - this will creat mycert.crt using .key and .csr file
+
+now using this both .key and .crt file we going to create a secure route (https)
+
+oc create route edge hello  --service=hello --key mykey.key --cert mycert.crt --hostname hello.apps.ocp4.example.com  -- now we can access the site using this URL. 
+
+
+port : this port number that will be attached with the service. so the request that service is receiving through this port. 
+targetport: this will be in application end. the application will be listening to this port.
+
+nodebalancer and ingress both are separate loadbancer is also an service but if we have multiple service we can afford loadbalancer for each service. instead of that we can use the ingress, where mulitiple service can be used in a single ingress .  Ingess is an service which use ingress controller (nginix, ha proyx like anything) to route the traffic. we do have ingress rule where we can define the things about our routes. we can do both path based ( /first, /second ) and host based ( service.domain.com , maintenance.domain.com) routing in the ingress.
+
+cluster IP is only used for internal puropose, which is not allowed to use it for external pupose. 
+scheduler is the one which will schedule the pod according to the requirement. it will first collect all the node resources and then it will chose which node is suitable to place the pod. 
+ 
+Normely when we create a deployment, the service will take default type as cluster IP (if the service type is not mentioned). and if we put oc get svc it will disply the services, in that wee will get an IP address for our created service. That IP address is static one. which will not change until we delete that. but pod ip will keep changing IP if it recreated . thats the reason this service came into place. So this cluster IP that we get is static Ip and that can be used internally but not outside of that network. we can curl that IP and port to get the page. but that it will work inside the pod only not from your computer.(check  our computer is like a node, they why the curl is not working it is also a internal only right)n but when we do the port forwording we can access this site.
+kubectl port-forwarding service/ourservice 8083:8082   -- this means we can access this site as localhost:8083 which will forward the request to 8082(service port) . have to check whats happening here
+
+While watching logs on the pod, if we give -f , it will stream the logs lively
+
+If we have two containers in the single pod, like sidecar containers that we used for Prometheus exporter like that. in that case the code will be below. multiservice also can be handled in this. 
+
+apiversion:v1
+kind: Service
+metadata:
+   name:nginix-service
+spec:
+  type: LoadBalancer
+  selector:
+   app: nginix
+  ports:
+   -name: proxy
+    port: 8082
+    targetport: 80
+  -name: application
+    port: 8081
+    targetport:81
+
+So services has 2 port which is opened for the two containers, so if we access via 8082 then it will reach 80 and reach the application and if we reach via 8081 it will go through the target port 81 and access the site. 
+If we need nordport then we have to mention the nordport port like 30000, nord port also can be exposed by outside which is not safe and if the node is restarted or recreated then also the ip will be changed.  so in this case we can use the loadbalancer. this loadbalancer will help from the aws or google cloud like that to get the external IP for static one which cannot be changed and also it wil be secure where node cannot be exposed.  and also we have ingress, which is advance of loadbalancer which I have already said above. 
+
+IN the ingres controller we have two type of path type , one is prefix and other is exact and also other one is implementationSpecific.
+exact - this is should match exact path that we mentioned in "Path: / "
+Prefix - if we give path: /   then it can access anthinng tht as /aa ,/nb like that
+         if we give path: /aaa  then we can access like /aaa , /aaa/dd , /aaa/rr, but not like /a , like that
+         if we give path: /aaa/bbb then we can access like /aaa/bbb/c , /aaa/bbb,adf  but not  /aaa/ddd/c  
+implementation specific: this can be decided by ingress controller.
+
+When liveness probe failed, the pod gets restarted until it succeed. but if rediness probe faile the pod will not restart but it will remove the pod endpoint from the service.
+
+when we use the command, kubectl get pods, we can see the list of pods that we created in that 1/1 represent there is one container in the pod and one container is running. if 0/1  there is one container in the pod and 0 is running. 1/2   there is two container in the pod and 1 is running. 
+
+startup probe:  which is used to delay the exectuion of readiness probe and liveness probe. until the container indicates its good to proceed. if the startprobe failed it will restar the pod.
+sometime if we not use the starup probe. and use the live and ready.  if the container take time to get it ready and if the liveness start executing to check the status and if its failed then it will restart the pod , again the pod will restart and again the live probe will restart and then it will go into the loop mode . to sort this out we can use the startup probe. 
+
+if the pod is restarted mulitple time the pod goes to crashloopbackoff state. once the pod went to crashloopbackoff state it will start increasing the time value for restarting the pod , like 1 sec and then 2 sec and then 3 min like that it will keep increasing the time value for restarting the pod, once it reach 300 sec then it will check the pod and restart it for every 5 min until the pod gets running. 
+kublet will do this work , like restarting the container like that. 
+
+by three type we can probe, One is using exec - executing some commands inside the pod and based on the exit code it will consider the pod is running or not, other one is http- which will use the httpget call to /health url to check whether its working or not. and other one is tcp - using this tcp we can check whether the port is open or not based on this it will consider its running or not. .
+
+IN Kubernetes we have different CNI plugins ( network )
+calico, flannel, weave.  and openshif SDN is used for openshift alone. Kubernetes uses kube-poxy to manage communication between services and pods. 
+kube proxy will keep all the routes and ensure the traffic directed to particular service or pod correctly, 
+the CNI plugin ensures the traffic between pod flows seamlessly by routing packetes between nodes . 
+
+
+Kubernetes operators:
+
+Bundling packaging and managing the Kubernetes controller .. for example lets take Istio where we bundle all the thing lke deployment , services and other things that are needed with Istio to run . all of them are bundled and combined as a operator.
+
+Operators are same as helm, but it has extra functions. lets take helm chart.  in helmchart folder we have values.yaml, deply, sec, config, and other resources as a set , we can set the parameters in value.yml which will be called in other resource as parameter.  so we can use helm chart to install Istio. but if someone comes and changes the port number or services host name and deploy it , the helm will not do anything its simply deploy it whatever its updated in that. but in case of operators the whole things will be in bundled all the resources will be inside the bundled. so if we install the bundle , bundle will install all the resources inside it. and also in the operators we can write reconciliation logic here , like if someones comes and changes anything inside the resources it will not allow to change . if reconciliation is not written  then it will allow. who ever created the operator will write the reconcilitation logic. 
+
+The second one is , when we try to upgrade the Istio from v.1 to v.2 via helm, we have to create a helm package for the new version or if there is already a package we have to deploy it again so that the new version will be updated, but in operator the upgrade will be happen automatically if any new version is released it will be updated automatically.  (only if we enabled the automatic sync or automatic upgrade option in the operator)
+
+
+third one is ,	we can install the Istio in multiple namspaces with one single operator. and also it will provide telemetry related information like how many peoples are installed this operator  and is there any issues in the operator all the thing it will provide (if we enabled the telemetery in the operator)  
+
+We can write the operators in three ways, one is go lang based , other one is using ansible, and other one is using helm .  so to get all the options and advantages we have to go with GO lang operator. where all the above mentioned things we can avail. if we go with helm or ansible we cant get telementry or other things like auto upgrade like that. 
+
+some famous operators are  Prometheus , elastic search, Istio, argocd ,minio operator. we can search in GitHub how they are written . operators-sdk framework are used to create/write  the kuberenetes operators.
+
+
+We do have operatorshub.io like dockerhub. which has all the operators. but like docker we cant push any operators into the operatorshub. any operators that we written and if we have to push to that operatorhub there will be some testing and verification process will be take place to consider that the operators are good and in working conditions. so whatever operators that we have in operatorshub will be good and verified by the certain people who owns it. 
+
+so once we downloaded the operators that we want , how we install that in the Kubernetes. we have to install OLM , operator lifecyle manager whcih will detect the operators that we downloaded and via that we have to install the operators that we downloaded. we can also install the operator without the OLM , but the preferred way is to go by this way. 
+
+while we creating the kuburnetes operator for our application we will also need to create some custom controllers which is need for our application to be live and healthy. for example in our Kubernetes we have default controllers like replicaset controller, deployment controller etc. which will watch our pod activity and desire state and make changes accordingly. then why need custom controller inside our Kubernetes operator for our application. 
+Kubernetes controller dont understand the business logic or operational complexity of our specific application. where our custom controller can do that. 
+Built-in controllers only handles generic Kubernetes tasks like keeping pods running and scaling them. but our application might need some special things like taking backups, custom failover, or complex configurations. in that case we can create a custom controller to automate those specific tasks, making our application self-managing and more reliable .
+
+Overall kibernetes controller are powerful, they dont have the specific intelligence needed to fully manage our unique application that we created via operators. mostly the custom controllers are essential for statefull apps.  other then special things that created for customer controller , basic thing can be handled by Kubernetes controller. 
+
+what is CRD, and CR
+
+CRD - custom resource definition ( using this definition we creating the custom resources like pod )  
+CR -> custom resource ( like pod, secret)
+
+so using the custom resource definition only we creating the custom resources like pod, secret (this is pre created resources by Kubernetes) but we can create our own thing like this by using custom resource definition.
+so like pod , if we have to create a resource called MySQL . we have to create a definition for MySQL ( which is used to create MySQL db instance).  so MySQL resource will be created . 
+while creating yaml file for our application in kind we use pod or deployment like that.  so if we have to create a MySQL database we can call the resource like kind:mysql and then we can mention some extra configuration like storage and replicas like that. which will create mysql databasee with mentioned storage and replicas. 
+
+HELM:
+
+Its like a package manager , in linux we have yum to install packages , in ubuntu we have apt to install the packages, likewise we have helm to install the packages in the kubernetees. we do have helm repository where we have helmcharts to install our packages, Helm charts do have deployiment.yaml, secre,config,service. all these are combined to have the package. So how to helm know which one to install first and which one to install next, so helm do have the piroity list likewise it will install it by oder. 
+
+namespace
+resourcequota
+serviceaccount
+secret
+configmap
+storageclass
+pv & Pvc
+cluster role
+service
+pod
+replicaset
+deployment
+HPod autoscaler
+stateeful set
+ingreess
+api service 
+
+to create helm we can use the command helm create  . it will create the following folder under the directory ( anything name/ is folder)
+helmignore, chart.yaml, values.yaml, charts/ , templates/ under this test/
+
+helmignore - contains patterns to ignore when packaging the helm charts
+chart.yaml - information about your chart, meta data like chart version and other etc
+values.yaml - the default values for your templates
+charts/ -  any other charts that needed to be called inside this chart, like modules in terraform. 
+templates/ - inside this we can create the deployment file and service file and other things . 
+
+tthere is helm2 and helm3 ,  in helm2 there is a tiler, which is removed in the helm3.
+In helm2 allows you to upgrade remove and rollback to previous version of charts, which is called as tiler . but in version3 it was removed due to security reasons.
+
+how can we override the helm values inside the helmchart
+You can pass another values file: `helm install --values=override-values.yaml [CHART_NAME]`
+Or directly on the command line: helm install --set some_key=some_value
+
+to list the deployed release, we can use helm list, helm ls
+to rollback to the previous version -- helm rollback RELEASE_NAME REVISION_ID
+how to upgrade a release  -- helm upgrade RELEASE_NAME CHART_NAME
+
+Running kubectl get pods you see Pods in "Pending" status. What would you do?
+
+One possible path is to run kubectl describe pod <pod name> to get more details.
+You might see one of the following:
+
+Cluster is full. In this case, extend the cluster.
+ResourcesQuota limits are met. In this case you might want to modify them
+Check if PersistentVolumeClaim mount is pending
+If none of the above helped, run the command (get pods) with -o wide to see if the node is assigned to a node. If not, there might be an issue with scheduler.
+
+
+COntrollerss - Kubernetes, controllers are control loops that watch the state of your cluster, then make or request changes where needed. Each controller tries to move the current cluster state closer to the desired state."
+
+Name two controllers you are familiar with
+
+Node Controller: manages the nodes of a cluster. Among other things, the controller is responsible for monitoring nodes' health - if the node is suddenly unreachable it will evacuate all the pods running on it and will mark the node status accordingly.
+Replication Controller - monitors the status of pod replicas based on what should be running. It makes sure the number of pods that should be running is actually running
+
+What process is responsible for running and installing the different controllers?
+Kube-Controller-Managerd
+
+control loop -- which will check our desired state and actual state and check the difference between them and act accordingly. 
+
+scheduler is responsible for choosing the node on which the Pod will run, Kubelet is the one that actually runs the Pod.
+
+Annotation:
+
+In Kubernetes and OpenShift, annotations are key-value pairs that can be added to various objects, such as pods, services, deployments, and more. They are used to attach arbitrary metadata to these objects, providing additional context or information
+annotations are meant for storing information that does not affect the way the objects are identified or selected.
+Annotations can store a wide range of data, such as build information, deployment notes, or configuration details. They can hold larger values than labels, allowing for more complex data.
+
+
+DIFF ingress/routes
+
+Ingress is a Kubernetes resource used for complex routing scenarios, requiring an Ingress controller.
+Route is specific to OpenShift, designed for simplicity and ease of use, automatically managing DNS and hostnames.
+
+OOM  - out of memory - this might happen due to memory link , some of the process in the container may cause this memory leak . so we have to find the process by executing ps-ef command to find which process is taking much memory, take the process id and using this process id we can take the thread dumb (in our application the devoleper might write multiple threads , in any of that thread is not handled good so one of these threds cause the memeroy leakage. using kill -3 we can take the thread dump) we have to send the dump to the developer and he wil check and analize it and make changes in the code and then we can redeply it. 
+
+Deployment stratergy:
+
+ROlling update: - in rolling update strategy is a default one in this we can use maxunavaileble and maxsurge. we can give in percentage wise like 25% or we can give in integer like 1 or 2 pods at a time.  Maxunavailable -2 ( means max 2 pods can be down at atime) max surge-2 (means maximum 2 pods can be created at a atime )  
+
+
+Recreate:  This type of deployment will terminate all the pod at a time and start creating new pod at a time . it will cause downtime because all the pods are down at a time. this type can be used in dev purspose where we dont care about downtime and also we can use this in the situation like if a pod wants to be placed in a node1 , where node1 has capacity to be run only one pod . in that case without deleting tht pod we cannot place the new pod over there , so here this recreate will work . eg first it will delete the pod from that node1 and then it will create a new pod in that node
+This recreate is also can be used while if we have unique volume of each pod and the accessmode for volume is "readewriteonce" so this volume can be mounted only one at a time. so if we have to be mount this to new pod then obvisouly that volume should be removed from the old pod . so when we use the recreate the old pod gets deleted and then new one will be created with that volume mounted. 
+
+
+blue/green
+
+We have two deployment - blue is current running version and gree is new one. so once the gree environment is ready we do the qa checks and keep it ready . both the blue and green environemt yaml file we should have the labels like replica:blue and replica green respectively. blue should have the blue lable and green should have the green lable. so the current running environment we have an service right which will be point to rpelica:blue. so we have to change this to green and redeploy the service. then all the traffic will be moved to the new one .  other one we can do is in the ingress we can point the service to green (in this case we should have two services blue and green ). in above we have only one which is blue in that we changed that to green . 
+bluegreen deployment is costly, because we having same set to pods in both blue and green . anyhow once we went to green deployment we will not remove the blue suddenly we will keep it atleast for 10-15 days, so the resource consumption will be there . so lets think we have many services and each services has 30 pods, then it will be more costly. so this dep is not much preferable. 
+
+canary
+
+In carry we can partially route the traffic to new version to test realtime output. like 90 percent will go to old one and only 10 percent will go to new one. eventhough we do test the code in uat, dev, perf like that we dont have the datas as production in these env so there might be some chance of fault when we push the code to prod , so tht this canary method is used, we can route the traffic to new one and we can check for one or two days if everthing goeswell we can increase the traffic step by step.
+
+here we creating two deployment, service,ingress for v1 and v2 (both will be unique one only the application is the same ). v1 is old one and v2 is new one . in old one we have 10 pods running. but new one we can have single pod is enough because we going to route the traffic 10 percent only. so that will be enough to handle. in the v2 also we created the same ingress and ingress point to v2 service.  but the domain name is same for both the version. ww.srini.com will be the host name for the both version. but only one thing changes in the ingress for v2. in annotation we have to mention the traffic should be 10% . so that ingress controller will come to know that we have to server the traffic to v1 90 and v2 10. 
+
+LDAP with openshift:
+
+go to cluster settings, in the cluster operators  you can see "authentication" once we click the authentication we can see "cluster oauth" clcik that we can see yaml and also we can add directly our ldap . in yaml we can add our identity provider as ldap, and also directly we can click add and chosse the ldap and fill the necessary details for the ldap .  now authentication will be restart and we can use  our oldap users to login .  
+
+Service mesh:
+
+A service mesh is a dedicated infrastructure layer for handling service-to-service communication within a distributed application. It provides features like traffic management, observability, security, and resilience without requiring changes to the application code.
+
+Its used for traffic management of your kub cluster  and specially east -west traffic management.
+the traffic between the services inside your kubernetes cluster is (east - west ) traffic. So the traffic the comes from outside to the cluster or the traffic that goes outside of the cluster is called ( north - south ) traffic . SO istio helps to maintain the traffic communication between the services that means (east-west) traffic. 
+
+Generally there will be default communitcation between the services ( services means our application has different services right like login, catalog, payment, notification) so these service will have the communication normally , then why we need mesh? . the above method will not be in encrypted manner. but Istio provides and maintain the traffic in MTLS (mutual tls )which is encrypted method. so what is tls and mtls. in tls the client will show the certification and the server acknowledge it and start the communication. but in the mtls  it should be in the both the end. this is advance level of encryption and security. Istio also have other functionality lets discuss
+Istio also helps in advance deployment stratergy.  Using Istio we can implement the canary deployment and a-b  blue-green deployment in very easy way.
+Istio also supports kiali (we have to install it but it is well integrated with the Istio. ). this will keep tract of the traffic that goes between the services. like collecting the metrics, behaviour of our services. ( kiali is observablity  check what is it). other than this Istio also provides lot of things like , request routing, load balancing , request timeout etc. 
+
+In all the pods of our Kubernetes cluster in the namespace (which Istio have access ) it will create a sidecar container  inside the sidecar container it has envoy proxy application. which will take care all the incoming and outgoing traffic between the container/pod  . any traffic that coming inside the container it will go first to proxy and then it will reach the application. so each and every pods has this proxy inside as side car container. 
+so if the catalog wants to access the payment service , catalog will send the api request to payment  so in this side car container will intercept and taken care of the traffic between the both using mtls (encrypted) and this traffic metrics and information will be sent to "istiod" which save all the information and this is used for observability.
+
+Normally when we request for pod or any other resources, it will send a req through api and then api will store the data in etcd, and then pod/pvc will be created. normally in Kubernetes there is a admission controller which has many controller inside that which will act between api and etcd. for eg if user created a pod with cpu as 2gb but the resource quota is set only 1 gb . then we will get an error right. these thing are validated and sent by admission controller. if the user request the resources which sent through api and then admission controller will validate it and it will send back the error. this thing will be taken care by resourequoto in adminission controller. like resourcequoto we have many admission controller in default with Kubernetes.   these admission controller is attached with api controller. we can check the api controller pods and edit it (it will show the adminission controller field)
+
+In Istio, we do have also admission controller.
+
+So how the side car container is created automatically when pods are created here. so when the user sends the request for pod creation it will request an api call , in that api already we said there is adminission controller is attached and there are varisious type of controller inside that controller which will help to mutate (edit the config ) and validate (validate the config) the config. in our case there is a controller called MUTATING ADMISSION WEBOOK CONTROLLER which will get the pod request and forward that request to ISTIOD (admssion webook) . once the request come to IStiod it will edit the pod request configuration and insert the creation for sidecar container and send back the req to API and then api will store it to ETCD.
+
+kubectl get mutatingwebhookconfiguration -- we can see istio-sidecar-injection  (when istio is installeed it will create a isito-sidecar-injection webhookconifguation)
+
+we can ask how the MUTATING ADMISSION WEBOOK CONTROLLER knows that if the request comes like pod creation it should tranfer the req to ISTIOD webook. so when the api request go to webhookconfiguration in that we have a istio-sidecar-injection webookconfiguration created there, if we edit that and see there is a rule stated if pod creation request is recevied it should go to IStiOD . 
+
+Finally how do you integrate istio with the namespace . "kubectl label namespace default istio-injection=enabled .  in the default namespace istio will be integrated. 
+
+Node affinity:
+
+Node affinity we can schedule the pod with particular nodee which matches the labels,  but nodeselector also does the same thing . so the different is nodeselector there are no advanced experessions or operators like ( "in", notin) . but in node affinity we can use operators like "in" and "exists" 
+
+example
+
+affinity:
+ requriedDuringSchedulingIgnoreDuringExecution:
+   NodeSelectorTerms:
+   - matchExpressions:
+     - key: disktype
+       operator: In
+       values:   ---(in this we can give multiple values for matching)
+       - ssd     
+
+we can also use operator exists without giving the values, so it will search for key "disktype" and if any node have the key disktype it will place the pod . it will not look for the values.  there are two types of affinity  , one is prefferduringscheduling and requiredduringschduling.  required will place the pod what the affinity tells, but prefer will first look for the lables and if no lables matches the affinity then it will place the pod any available node (which does not matches the affinity also)
+
+affinity:
+ requriedDuringSchedulingIgnoreDuringExecution:
+   NodeSelectorTerms:
+   - matchExpressions:
+     - key: disktype
+       operator: Exists
+
+like "in" we have "notin" it is opposite , the pod will place in the nodes which does not have the values that present. and the same like "exists" we have "Doesnotexists" so in this it will place the pod where there is no label called disktype. SO if we give to type of affinity like key=disktype and value=ssd and key=diskype and value=hhd .  so we have two nodes which has this label each one. so where the pod will be placed. in this cases we can give weight value for each affinity, for first affinity we can give any weight=1 and second affinity we can give the weight=5 , so which has the highest weight the pod will be perrer to be placed.
+
+
+What will happen when we request to create a pod.
+
+
+API Request: When you run a command like kubectl run, it sends a request to the Kubernetes API server to create a new Pod resource.
+The api will authenticate first and then the api stores all the pod definition that we mentioned in yaml, it will store in etcd. actually etcd will store all the desired state of the pods, its store all them in key-value pair. 
+So once the information stored in the etcd, the api will notify the scheduler about this and scheduler will choose where the pods should be placed with the availablity of nodes, once the scheduler choose where to store the pod, it will update the information in the etc about this information. once this information is updated, kublet will keep polling the api server for any new update or or any new pod creation , so as i said before once the scheduler updated the etcd about the schdueled informaton via api then kublet will get the information from api and start creeating the pods accordingly. 
+
+
+issues we faced:
+
+our application is running and we have the svc for this, when we try to run in web, it is not reachable, we checked any issues with app and other possiblities, and then we check the svc and we found there is no endpoint is created for this service. that means the pods not been linked to the service. so we checked the labels for both svc and pods, and it seems some mismatch in the lables and which has been edited and it got resolved.
+
+The same issue, but this time in the SVC the target port is mentioned as 80 . but when we checked the container and what port it got exposed and we came to see it is exposed to 8080. so we changed the target port in svc and restarted . then application is connected. 
+
+Other issue, one service need to access the other service(db) , but its unable to connect. so when we checked the network policy we came to know that the label that allowed to access the service is not mentioned in the lablel (first service). first service had the lable app=frontend, but the network policy says app=app1 is allowed to access the db service. so we changed the label in the network policy and then it accepted the traffic. in the network policy we can also limit and customise the network traffic that need to access the particular service. 
+
+If the pod is in pending state, its not only the problem like image pull, permission and resources like that . there may be problem with kube-scheduler also. check whether the scheduler is running. 
+If we type kubectl get pods, then if it throws error means we can check the apisever is running, if not we can get this error. and also if kube-config file is not correct set as KUBECONFIG environment variable.  if kubeconfig file is not there then kubectl will not send any request or anything..
+
+if have a application with 2 replica, and if we delete one replica it should replace with another . but its not recreating other repica. the problem is there might be issue with replicaset controller, so these controller are managed by kube-controller-manager this is responsible for these controllers. so check the controller-manager are running and correct it . 
+
+kube-system, kube-plublic, kube-node-lease - default namespace that comes with kubernets
+
+Init Containers are valuable for ensuring that specific tasks are completed before your main application starts, providing a clean and efficient way to manage initialization processes in Kubernetes.
+
+DaemonSet is a powerful Kubernetes feature that ensures a specific Pod runs on all nodes (or a subset) in a cluster. It's commonly used for tasks that need to be performed on every node, such as logging, monitoring, or networking. By using a DaemonSet, you automate the deployment and management of these Pods across your cluster. we can create this same as a app service that we creating using yaml, but in kind:demonset we have to mention. so that this app will be placed in all the nodes of the cluster. deamon will auto remove and add thee app according to the node available (when its removed or added).
+like Prometheus exporter has an example.
+DaemonSets in Kubernetes are namespace-scoped. This means that when you create a DaemonSet, it exists within a specific namespace, and it will only manage Pods within that same namespace.
+kubectl get ds  -- will show the deamonsets
+
+Kubernetes uses a configuration file called kubeconfig to manage access to  different clusters. Each cluster can be defined within this file. The kubeconfig file is usually located at ~/.kube/config.
+
+kubectl config get-contexts   - list the clusters
+kubectl config use-context my-context-1  -- to switch to different cluster.  this cluster name and the url configured in the config file. 
+
+Network Policies in Kubernetes allow you to control the traffic flow between Pods. They define how Pods can communicate with each other and with other network endpoints
+
+Let’s assume we have the following Pods:
+
+Frontend: A web application that users access.
+Backend: An API service that the frontend communicates with.
+Database: A database service that the backend accesses.
+
+Network Policy Example
+We want to create Network Policies that:
+
+Allow the Frontend Pod to communicate with the Backend Pod.
+Allow the Backend Pod to communicate with the Database Pod.
+Restrict all other communication.
+
+By default all pods have connection to each other , but through network policy we going to control the traffic . 
+
+YAML for network policies
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-database
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: database
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: backend
+
+in the above netwok policies , we saying the ingress from backend can only able to acess the database ( app:database) so other pods dont have access to the db. in this way we can secure the connections. 
+
+
+ETCD backup:
+
+etcd service listens on port 2379 by default.
+
+etcdctl Tool: Make sure you have the etcdctl command-line tool installed. It’s usually available on the master node.
+
+Set the below environment variable      ( all these values we can get it from etcd.yaml file) the path of yaml is /etc/Kubernetes/manifests/etcd.yaml
+
+export ETCDCTL_API=3
+export ETCD_ENDPOINTS=https://127.0.0.1:2379  # Change this to your etcd endpoint
+export ETCD_CACERT=/path/to/ca.crt            # Path to CA certificate
+export ETCD_CERT=/path/to/etcd-client.crt     # Path to client certificate
+export ETCD_KEY=/path/to/etcd-client.key       # Path to client key
+
+or we can pass all this on the command line directly while taking the backup
+
+etcdctl snapshot save  /path/to/backup/etcd-backup.db    --- this will take the backup and stores in the path 
+
+we can also use the --endpoints, --cacert, --cert, and --key flags directly in the command if you didn't set them as environment variables which is done above.
+
+etcdctl snapshot status /path/to/backup/etcd-backup.db - show the status of the snapshot
+
+
+TO restore the etc
+
+
+etcdctl snapshot restore /path/to/backup/etcd-backup.db --data-dir /path/to/new/etcd-data-directory   (this --data-dir is for we can restore  this backup to the particular path which is mentioned in --data-dir and this path will be pointed to the configuration file of etcd )  
+
+update the etc configuration file about the new directory that we created the backup  (/path/to/new/etcd-data-directory)  ( configuration file is nothing but changing the values in the etcd.yaml file )  /etc/Kubernetes/manifests/etcd.yaml
+
+Restarting etcd
+
+After making changes to the configuration file, you’ll need to restart the etcd service or the Pod for the changes to take effect. The method depends on how etcd is deployed:
+
+If etcd is running as a static Pod: Simply edit the YAML file in /etc/kubernetes/manifests/. The kubelet will automatically detect changes and restart the Pod. so once the yaml file edited it will take some time to effect so we dont want to do anything . but
+
+If etcd is running as a service: Restart the service using: sudo systemctl restart etcd.
+
+Velero :
+
+Velero is an open-source tool used for backing up and restoring Kubernetes resources and persistent volumes.  
+
+Disaster Recovery: If something goes wrong (like accidental deletions or cluster failures), you can restore your applications to their previous state.
+Migration: You can move applications from one cluster to another easily.
+Testing: You can create backups before making significant changes to your applications or cluster.
+
+Before using Velero, you need to install it and configure it to use an S3 bucket for storage. Here’s a simple installation process:
+
+
+velero install \
+    --provider aws \
+    --bucket <YOUR-BUCKET-NAME> \
+    --secret-file ./credentials-velero \
+    --region <YOUR-AWS-REGION> \
+    --use-volume-snapshots=true \  --- this will ensure that pv and pvc also included in the snapshot
+    --backup-location-config region=<YOUR-AWS-REGION>
+
+Make sure you have AWS credentials in ./credentials-velero with permissions to access the S3 bucket.
+velero backup create my-backup --include-namespaces my-namespace   -- taking backup of particular namespace
+velero backup create my-cluster-backup  -- taking backup of full cluster  (if we didn't mention any particular namespace or any resource it will take the complete backup of your cluster) my-cluster-backup is the name that you giving name for your back up.
+
+you do not need to annotate the PVCs if you have already installed Velero with the --use-volume-snapshots= yes flag. if it is not mentioned we have to manually annotate the pvc to take the backup of your pvc while backing up the namepace or cluster using velero.
+
+kubectl annotate pvc my-pvc backup.velero.io/backup-volumes=my-pvc    --- annotate the pvc manually to take the backup 
+
+we also need to create volumesnapshot class while installing velero. in this we mentioned "drive" we have to use this for which cloud volume we taking the  backup, like we have aws, and other cloud providers where we can store our pv and pvc. so mention that the pv is stored in aws then we have to mention the aws driver in that place. given the below example.  
+
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: my-snapshot-class
+driver: ebs.csi.aws.com
+deletionPolicy: Delete
+
+
+If you’re using AWS EBS volumes, make sure that the IAM role associated with your Velero installation has the necessary permissions to create and manage snapshots.
+
+IAM PErmISSION
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateSnapshot",
+                "ec2:DescribeSnapshots",
+                "ec2:DeleteSnapshot",
+                "ec2:DescribeVolumes",
+                "ec2:CreateTags"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+
+
+
+
+
+Step-by-Step Guide to Set Up Periodic Backups with CronJob:
+
+#!/bin/bash
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+BACKUP_NAME="backup-$TIMESTAMP"
+velero backup create $BACKUP_NAME --include-namespaces your-namespace  # Replace with your namespace
+
+
+Make the above code as velero-backup.sh and make them as executable.   we can execute them directly or we can also run inside the kube cluster by making them as a docker image and run this periodically.
+
+
+Docker file
+
+FROM velero/velero:v1.7.0  # Replace with the desired version  -- this image is for velero binary
+COPY velero-backup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/velero-backup.sh
+ENTRYPOINT ["/usr/local/bin/velero-backup.sh"]
+
+
+Yaml file 
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: velero-backup-cron
+spec:
+  schedule: "0 * * * *"  # This example runs the backup every hour
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: velero-backup
+            image: your-docker-registry/velero-backup:latest  # Replace with your image
+            imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure
+
+
+kubectl apply -f velero-cronjob.yaml ( above yaml file)
+
+kubectl logs job/velero-backup-cron-<job-name>   - for checking the logs
+
+Some users create custom dashboards using tools like Grafana or Kibana to visualize Velero backup and restore statuses. This requires additional setup and may involve using logging or monitoring solutions to collect Velero metrics.
+
+
+Kubernetes Architecture Overview
+Kubernetes consists of several key components that work together to manage containerized applications:
+
+1. Master Node (Control Plane)
+The control plane is responsible for managing the Kubernetes cluster. It includes the following components:
+
+API Server: The front-end of the Kubernetes control plane. It handles requests (RESTful) and serves as the gateway for all other components to interact with the cluster.
+
+etcd: A distributed key-value store used to store all the cluster's data, including configuration data and the state of the cluster.
+
+Controller Manager: Runs various controllers that regulate the state of the cluster, ensuring that the desired state matches the actual state.
+
+Scheduler: Assigns workloads (pods) to worker nodes based on resource availability and other factors.
+
+2. Worker Nodes
+These nodes run your applications and consist of the following components:
+
+Kubelet: An agent that runs on each worker node. It ensures that the containers are running in pods as specified by the API server.
+
+Kube-Proxy: Handles network routing for the services, enabling communication between pods and external clients.
+
+Container Runtime: The software responsible for running containers (e.g., Docker, containerd).
+
+How Controllers Work
+Controllers are crucial for maintaining the desired state of the cluster. Here’s how they operate:
+
+Watch for Changes: Controllers watch the API server for changes to resources (like pods, deployments, etc.). They use the watch mechanism to get notified about any changes.
+
+Compare State: Each controller compares the current state of a resource with the desired state defined in the configuration (like a Deployment).
+
+Take Action: If there’s a difference between the desired state and the current state, the controller takes action to correct it. This could involve:
+
+Creating new pods if some are down.
+Scaling the number of replicas up or down.
+Updating the configuration of existing resources.
+Repeat: This process happens continuously. Controllers are always watching the state of the cluster and taking action as needed to maintain the desired state.
+
+Example: Deployment Controller
+When you create a deployment, you specify how many replicas (pods) you want to run.
+The Deployment Controller watches the current state:
+If some pods crash or are deleted, the controller will notice that the actual number of replicas is less than desired.
+It then creates new pods to meet the desired number, ensuring the application stays available.
+
+2. ReplicaSet --(replication controller older one)
+Purpose: Similar to the Replication Controller, a ReplicaSet ensures that a specified number of pod replicas are running.
+How It Works: It uses label selectors to identify which pods it should manage. If the number of pods falls below the desired count, the ReplicaSet creates new ones. ReplicaSets are often used in conjunction with Deployments.
+
+DaemonSet Controller
+Purpose: Ensures that a specific pod runs on all (or a subset of) nodes in the cluster.
+How It Works: When you create a DaemonSet, the controller ensures that a pod is running on each node. This is useful for tasks like monitoring, logging, or network management, where you want a service running on every node.
+
+1. Service Controller
+2. Node Controller
+3. Endpoint Controller
+Namespace Controller    these are the other controolller.
+
+
+S2I simplifies the process of building and deploying applications in OpenShift by allowing you to create Docker images directly from source code. This makes it easier for developers to focus on writing code without worrying about the underlying infrastructure and deployment details.
+
+S2I makes it super easy to turn your application code into a running app on OpenShift without worrying about the complex details of building and deploying. It automates the process so you can focus on coding!
+
+there are many builder images will be available. lets take nodejs, we do have builder image nodejs and we do have a code that build in nodejs, so s2i will build the image from nodejsimage+ourcode  it will build the docker image with our code and deploy it on the openshift. we can only concentrate on our code alone. that enough , the build process will be taken by s2i. 
+
+How Does S2I Work?
+Start with Your Code: You have your application code (like a website or API) ready to go.
+
+Use a Builder Image: S2I uses a special template called a "builder image" that has all the tools needed to build your application. For example, if you’re using Node.js, there’s a Node.js builder image.
+
+Build Your App: When you tell S2I to build your app, it:
+
+Takes your source code.
+Runs the necessary commands to prepare it (like installing libraries).
+Packages everything into a Docker image.
+Deploy: Once the image is created, it can be easily deployed in OpenShift as a running application.
+
+Imagepullsecret :
+
+it is nothing but when we pulling images from the private repo ( we have done this before using SA and secrets). IN our case we have to create a secrets with our credentials using 
+
+oc create secret docker-registry my-pull-secret \
+    --docker-server=<registry-url> \
+    --docker-username=<your-username> \
+    --docker-password=<your-password> \
+    --docker-email=<your-email>
+
+once secret created link that secret with default SA account.
+
+oc secrets link default my-pull-secret --for=pull
+
+So now the pod can pull the images . we have other way like without linking the secret with SA account . we can directly call the secret in the yaml file where we creating the deployment like below. this will also work.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  namespace: my-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      imagePullSecrets:
+      - name: my-pull-secret
+      containers:
+      - name: my-container
+        image: <registry-url>/<image>:<tag>
+
+Best practice is to bound the secret with SA and also mention that in the yaml file because we can come to know which secret is used for this deployment . x
+
+
+Clarity: Makes it clear which secrets the deployment relies on.
+Portability: If you ever change the service account or deploy the YAML in a different namespace, having it in the YAML ensures it will work as intended.
+
+
+
+OOM --> we can reduce the memory we can use garbage collection (java, python)  . consider tuning garbage collection settings to improve memory management.
+Garbage collection (GC) is a process used in programming languages to automatically manage memory. When your program creates objects (like data or resources), those objects take up memory. Over time, some of these objects are no longer needed, but the memory they occupy isn’t automatically freed up. Garbage collection helps by automatically identifying and removing these unused objects, freeing up memory for other uses.
+
+Garbage Collection: Automatically cleans up unused memory in your application.
+
+Summary
+To find memory leaks:
+
+Monitor memory usage over time.
+Use profiling tools to analyze memory.
+Conduct manual code reviews to spot unnecessary references.
+Run automated tests under load to identify issues.
+Analyze garbage collection logs for patterns.
+Use specialized memory leak detection tools.
+
+
+GATEKEEPR:
+
+Gatekeeper allows you to define policies that specify the rules for your Kubernetes resources (like pods, deployments, services, etc.). For example, you can create rules that require certain labels on all pods or restrict the use of certain container images.By using Gatekeeper, you can maintain better control over your Kubernetes environment and ensure that it operates securely and efficiently.
+
+
+Restricting Container Image Sources:
+
+Use Case: An organization wants to ensure that all containers are pulled from a trusted registry to avoid using potentially malicious images.
+Policy: You can create a policy that only allows images from a specific registry (e.g., myregistry.com).
+Outcome: If a developer tries to deploy an image from an unapproved source, Gatekeeper will deny the deployment.
+
+
+Labeling Requirements:
+
+Use Case: For better organization, an organization wants all resources to have specific labels (e.g., app=frontend).
+Policy: Implement a policy that checks for required labels on all deployments and services.
+Outcome: Resources without the required labels will not be created.
+
+Preventing Privileged Containers:
+
+Use Case: To enhance security, an organization wants to prevent the deployment of containers that run as root.
+Policy: Create a policy that disallows containers running with root privileges.
+Outcome: Any attempt to deploy a container with elevated privileges will be denied.
+
+Install the gatekeeper :
+
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/deploy/gatekeeper.yaml
+
+define the constraint template
+
+Create a constraint template that specifies the policy logic. This template will check whether the images used in deployments are from Docker Hub. Here's an example YAML file for the constraint template:
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: imagenotallowed
+spec:
+  crd:
+    spec:
+      names:
+        kind: ImageNotAllowed
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        image:
+          type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package imagenotallowed
+
+        violation[{"msg": msg}] {
+            input.review.object.spec.containers[_].image = img
+            not startswith(img, "docker.io/")
+            msg := sprintf("Image %v is not allowed; only images from Docker Hub are permitted.", [img])
+        }
+
+Create the Constraint
+
+create a constraint that uses the above template. This constraint will enforce the rule you just defined. Here’s an example YAML for the constraint:
+
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ImageNotAllowed
+metadata:
+  name: restrict-image-source
+spec:
+  parameters:
+    image: "docker.io/*"
+
+
+
+Lastly apply both the Constraint Template and Constraint. and try to pull the images from other registry it wil not work.
+
+cloudwatch:
+
+enabling Container Insights and installing the CloudWatch agent as a DaemonSet will provide comprehensive monitoring for your Kubernetes cluster. Here’s a quick summary of the steps:
+
+Steps to Monitor Your Kubernetes Cluster
+Enable Container Insights:
+
+For Amazon EKS, you can enable Container Insights directly from the EKS console. This feature provides automatic monitoring of your cluster and integrates with CloudWatch.
+Install CloudWatch Agent as a DaemonSet:
+
+Deploy the CloudWatch agent as a DaemonSet to collect metrics from all nodes and pods. This allows the agent to gather detailed performance data and logs.
+You can use the Helm chart provided by AWS for a simplified installation.
+bash
+Copy code
+helm install cwagent aws-observability/cwagent \
+    --set clusterName=<your-cluster-name> \
+    --set region=<your-region>
+Configure the CloudWatch Agent:
+
+Customize the agent configuration to specify which metrics and logs you want to collect. You can do this by providing a configuration file or adjusting parameters during the installation.
+Set Up CloudWatch Alarms and Dashboards:
+
+Create CloudWatch alarms based on the metrics collected to get notified of any issues.
+Use the CloudWatch console to create dashboards that visualize your metrics.
+
+Ingress class :
+
+You might have different Ingress controllers in your cluster for various purposes, such as managing different protocols or providing different features. The Ingress Class helps Kubernetes determine which controller should handle a specific Ingress resource. in a ingress rule we can mention which ingress controller we can use for this rule. in our cluster we do have many ingress controller so in that we can choose one for our rule. 
+
+What happens when deployment yaml file is triggered:
+
+Kubernetes creates a Deployment object in its API server. This object contains information about your desired state (number of replicas, container image, etc.).
+ and then The Deployment controller detects the new Deployment and creates a ReplicaSet based on the specifications.The ReplicaSet creates the specified number of pods (containers running your application). Kubernetes Control Loop  continuously monitors the state of the pods.
+If a pod fails or is deleted, the ReplicaSet automatically creates a new pod to replace it, ensuring the desired number of replicas is maintained.
+
+IN other way we can say as
+
+When you apply a Deployment (for example, using kubectl apply), it sends a request to the Kubernetes API server.
+The API server updates its state to include the new Deployment. then the deployment controller detects this new deployment and start executing the process.
+
+When the controller detects a new Deployment or a change in an existing one (like an update), it processes the event.
+
+ Deployment controller continuously watches the API server for any changes related to Deployments. and then if any thing new created or any new update from existing deployment file it will check and start execute the process. 	
+
+
+Buildconfig:
+
+buildconfig is nothing but its like cicd process, using our code with images/dockerfile it will build the image and push to the repository and create a deployment. we can also add webhook  so that if any changes in the code it will automatically deploy the changes. 
+
+oc create buildconfig my-app-build \
+  --source-type=Git \
+  --source-repo=https://github.com/myuser/myapp.git \
+  --source-ref=main \
+  --strategy=Source \
+  --output-to=my-app-image:latest
+
+we can use two type of startegry , one is using docker file and other one is using s2i.  in s2i we build our code with image which is already present in the openshift repository.  in docker file we have to mention our docker file in the template , so that while building the code it wil use the docker file to build the images.  all these can be done through template.  in template.yaml file we have to give all the details like deployment, service, route , and the buid startergy. and once the template is created we can use  the template and create the application . oc create new-app template.yaml  like this.  once the  buildconfig created we have to describe the bulidconfig in that we can get the webookurl of that application. copy that url and go to the Git up repository of that particular code and go to option weboook and add this webookurl. so that if any changes in the url it wil be automatically updated. 
+
+ DeploymentConfig is an OpenShift-specific resource, built on top of the standard Kubernetes Deployment.Deployme.ntConfig provides more control over the deployment process, including custom triggers and strategies.` in the deployment config itself we can set the git url path of the code. 
+
+DeploymentConfig Behavior:
+
+Automated Triggers: This DeploymentConfig automatically triggers a new deployment when there are changes in the Git repository (e.g., a new commit on the main branch) or when a new image is available in the image stream.
+Custom Deployment Strategies: You can choose to use different strategies like rolling updates or recreate all pods, providing more flexibility.
+Versioning: It keeps track of different versions of the application, making rollbacks easier.
+
+
+build config is just used for only building the image and push to the repo. once the new image is updated in the image registry(repo) the deployment config or the deployment will automatically detect the new image and update the deployment (but in this case we have to use the imagechange trigger which we studied before for image stream) . using this imagechange trigger only the deployment will update the new image .
+
+
+Pod affinity :
+
+If you have a front-end service (frontend) that communicates frequently with a back-end service (backend), you can use pod affinity to ensure both are running on the same node.
+
+example yaml:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: backend
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: frontend
+          image: my-frontend-image:latest
+          ports:
+            - containerPort: 80
+
+In the above deployment we labled as app: frontend.  and also we said like these frontend pod which is going to be deployed must be deployed in the node where atleast one pod ( app: backend) should be presented.
+in the pod affinity we saying the pods must be deployed in the same node where app: backend labeled pods are placed.  this does not mean all the pods will be placed in the same node .
+he rule specifies that a frontend pod should be scheduled on a node that already has a backend pod. However, if there are multiple nodes with backend pods, the scheduler can place each frontend pod on different nodes that meet this criterion. atlast all the pod must be placed on the node where atleast one (app: backend) labled pod is available. 
+
+POD ANTI AFFINITY:
+
+The scheduler ensures that no frontend pod will be scheduled on the same node as any existing backend pod. This helps spread the replicas across different nodes.
+Replicas: In this example, if you have three replicas of the frontend pod, they will be distributed across nodes that do not have backend pods.
+
+
+
+Node affinity directs the Kubernetes scheduler to place pods on nodes that meet specific criteria based on node labels.
+
+diff between node selector/ node affinity
+
+While both node selector and node affinity serve similar purposes in Kubernetes—specifying which nodes a pod can be scheduled on—they have some key differences in terms of flexibility and complexity. Here’s a clear comparison:
+
+Node Selector
+Definition: A simple way to constrain pods to specific nodes by specifying key-value pairs that must match node labels.
+Syntax: Uses a straightforward format where you specify a list of key-value pairs.
+Usage: Best for simple requirements where you want to match specific node labels.
+
+Node Affinity
+Definition: A more advanced and flexible way to specify scheduling constraints for pods based on node labels. It allows for more complex rules and operators.
+Syntax: Uses a more structured format that can include logical operators and expressions.
+Usage: Ideal for scenarios where you need to specify more complex conditions (like matching against multiple labels or using operators like In, NotIn, Exists, etc.).
+
+we have seen this above detaily.
+
+
+NODE ANTI AFFINITY:
+
+The scheduler will avoid placing the critical app pods on any node that has the label reliability: unreliable.
+Replicas: If you have three replicas of the critical app, the scheduler will ensure that none of them are placed on the excluded nodes.
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: critical-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: critical-app
+  template:
+    metadata:
+      labels:
+        app: critical-app
+    spec:
+      affinity:
+        nodeAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: reliability
+                    operator: NotIn
+                    values:
+                      - unreliable
+      containers:
+        - name: critical-app
+          image: my-critical-app:latest
+
+ETCD DOWN:
+
+Running Pods: Existing pods and services that were already running before etcd went down will continue to operate normally. They will still serve traffic and function as expected.
+No Updates or Changes: However, no updates can be made to these resources (e.g., scaling, updating configurations) until etcd is restored.
+
+Health Checks and Monitoring: Many monitoring solutions rely on the API server to retrieve cluster state information. If etcd is down, these solutions may not be able to access critical data, potentially leading to gaps in monitoring and alerting.
+
+Event Data Loss: Events that are logged in the cluster are also stored in etcd. If etcd is down, new events cannot be recorded, leading to potential loss of important operational information.
+
+
+EGRESS:
+
+Egress in OpenShift refers to the traffic that flows out of the OpenShift cluster to external networks or services.
+You can manage egress traffic using Egress Network Policies, configure Egress IPs to define a static external IP, Controlling egress traffic is vital for network security, compliance, and monitoring in a cloud-native environment like OpenShift.
+Egress is nothing but we can block or allow the outgoing traffic from pod/namespaces. defaultly it will allow all traffic for outgoing, but we can create a egress network policy and mention what are the domain and ip that should be allowed, for example  pod should  communicate with google.com, in that case we can define that in network policy and then the pods can access google.com the outgoing traffic will be allowed. 
+
+NOTE : egress can only use IP address not domain name directly. but in above i said google.com for example so ignore that we have to use IP address only 
+
+so in that case if a site has set dynamic ip address, then how can we allow them in policy, because we dont have exact IP address because it will change frequently then how come we mention that this ip addrewss to be allowed . IN that case we can use proxy server which can filter and allow or block the request accordingly. make sure that in network policies you should mention the poxy server ip address that should be allowed. so that pod can reach the proxy server first and then it will be allowed or block according to the proxy server that we defined. 
+
+Proxy Server (e.g., Squid, Envoy):
+
+Route egress traffic through a proxy that can resolve DNS names and filter traffic based on domains, not IPs.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: block-egress-to-example-com
+  namespace: my-namespace
+spec:
+  podSelector:
+    matchLabels:
+      app: my-app
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 93.184.216.34/32    -- only this ip address range can be accessed from pod or namespace level
+  policyTypes:
+  - Egress
+
+
+NOTE UPDATED ONE:UPDATED ONE :UPDATED ONE:   %%%%IMPORTANT%
+
+openshift version above 4.8+ in egress network policy we can apply the domain name directly. 
+
+	apiVersion: network.openshift.io/v1
+kind: EgressNetworkPolicy
+metadata:
+  name: allow-google-and-other-sites
+  namespace: your-namespace
+spec:
+  egress:
+  - type: Allow
+    to:
+      dnsName: "google.com"
+  - type: Allow
+    to:
+      dnsName: "example.com"
+
+An Egress IP in OpenShift is a way to control how traffic leaving the cluster (outbound traffic) appears to the outside world. Normally When a pod or application inside your OpenShift cluster needs to communicate with services or websites outside of OpenShift, the ip address will be dynamic for the receiver side. the ip address will not be static. so the receiver will get different Ip for each time when you hit the outside website or services. 
+
+However, in some cases, you might want all the traffic leaving the OpenShift cluster to appear to come from a specific, fixed IP address (instead of random cluster IPs). This is where Egress IPs come into play
+
+The main reason for using an Egress IP is to make the traffic leaving the OpenShift cluster appear as if it’s coming from a specific, static IP address. This is useful in situations where:
+
+External systems or services may whitelist specific IP addresses. For example, if you need to access a third-party service, they might only allow traffic from a certain IP for security reasons.
+You want to track or log all outgoing traffic under a single IP address for monitoring or auditing purposes.
+
+Example Use Case for Egress Router
+Let’s say you want all outbound traffic from your OpenShift cluster to go through a firewall for security. You could set up an Egress Router that ensures all traffic passes through the firewall before leaving the cluster, allowing you to inspect and filter any potential security threats before the traffic reaches the internet.
+
+#####
+
+Purpose: eksctl is a command-line tool specifically for EKS. It is used to create, manage, and delete EKS clusters. It simplifies tasks like setting up the EKS cluster, configuring the nodes, and other infrastructure-related tasks on EKS.
+Scope: eksctl is primarily used for cluster management and infrastructure setup on AWS EKS. It is not a general-purpose Kubernetes management tool like kubectl, but it specifically helps you with provisioning the EKS infrastructure and managing the cluster lifecycle.
+eksctl: Primarily used for EKS cluster management (e.g., create, scale, delete clusters and node groups). It’s specific to EKS and is focused on infrastructure management in the AWS cloud.
+
+KUBECTL
+ A general-purpose Kubernetes CLI used to interact with Kubernetes resources within an existing cluster. It’s used for managing the lifecycle of applications and workloads once your Kubernetes cluster (like EKS) is up and running.
+
+
+#####
+
+IAM Users in Kubernetes: IAM users (or IAM roles) are authenticated to EKS, but they are not “Kubernetes users” by default. Instead, IAM users are mapped to Kubernetes roles via the aws-auth ConfigMap.
+
+RBAC Roles in Kubernetes: RBAC controls what authenticated IAM users can do inside the Kubernetes cluster. RBAC is used to assign permissions to those IAM users after authentication.
+
+Yes, IAM Users Can Be Used in Kubernetes: If an IAM user (or role) is mapped in the aws-auth ConfigMap, that user can authenticate to the cluster. But the user’s permissions are governed by RBAC, not by the IAM role/group itself.
+
+#####
+
+
+IAM service account vs Kubernetes service account:
+
+Kubernetes service account is used when the pod need to get access to other service that inside the Kubernetes cluster . so service account is created and attached to the pod. 
+
+whereas in IAM service account is nothing but , this can be create using ekctl command and the with the IAM service account we can attach the role like this service account can access the s3 bucket or any other services that in AWS. So once this IAM service account is created , we can attach this service account to the pod, so that pod can access the s3 bucket,( SO pod is trying to access the s3 bucket which is aws service so it has to be authenticated thats the reason IAM service account is created )
+
+
+
+IAM Service account in not different, it is same as our service account, but in our service account we just mentioning in the annotation that the policy or the role is attached is IAM role. 
+
+
+step :
+
+create a service account using yaml. simply create service account alone
+then create a policy in aws 
+then apply the below command 
+
+eksctl create iamserviceaccount \
+  --name s3-access-sa \  ---- service account name 
+  --namespace default \
+  --cluster your-cluster-name \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \  --- iam policy that we created
+  --approve
+
+
+
+
+this above command which will associate the iam policy to the service account that we mentioned. so once we executed this command , this will automatically add the annotation in the service account with the policy that we attached. 
+
+in the service account that you created you can see this annotation  "eks.amazonaws.com/role-arn=arn:aws:iam::123456789012:role/your-iam-role" the policy that you created. 
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/your-iam-role
+  name: s3-access-sa
+  namespace: default
+
+
+You're absolutely right to ask! If you have already created a Kubernetes service account using a YAML file, there is no need to create it again using eksctl.
+
+The confusion often arises from the distinction between:
+
+Creating the service account in Kubernetes (using kubectl or YAML).
+Associating the service account with an IAM role for AWS permissions (using eksctl or AWS CLI).
+Clarifying the Two Steps
+Creating the Kubernetes Service Account (using kubectl or YAML):
+
+This step simply creates a Kubernetes service account in your cluster. It doesn't grant any AWS-specific permissions or tie the service account to an IAM role.
+
+You can create a service account as follows:
+
+yaml
+Copy code
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-access-sa
+  namespace: default
+bash
+Copy code
+kubectl apply -f service-account.yaml
+Creating and Associating an IAM Role for the Service Account (using eksctl or AWS CLI):
+
+To grant the Kubernetes service account permissions to access AWS resources (like S3, DynamoDB, etc.), you need to associate it with an IAM role.
+
+eksctl is a tool that simplifies the process of associating an IAM role with a Kubernetes service account. It does this by creating an IAM role and automatically annotating your service account with the appropriate role ARN.
+
+The association of the IAM role to the Kubernetes service account is crucial for the IAM Roles for Service Accounts (IRSA) feature in Amazon EKS. This allows pods running with that service account to assume the IAM role and gain access to AWS resources.
+
+Example using eksctl:
+
+bash
+Copy code
+eksctl create iamserviceaccount \
+  --name s3-access-sa \
+  --namespace default \
+  --cluster your-cluster-name \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+  --approve
+Why eksctl Command is Needed:
+Creating the IAM Role: eksctl helps create the IAM role with the specified AWS permissions (e.g., AmazonS3ReadOnlyAccess policy). The IAM role is needed to access AWS resources like S3.
+
+Automatic Annotation: The eksctl command automatically adds an annotation to the Kubernetes service account with the IAM role ARN. This annotation is what links the Kubernetes service account to the IAM role, enabling pods to assume that role.
+
+Simplification: Instead of manually creating an IAM role in AWS and annotating the service account, eksctl does everything in one step, making it easier to manage IAM roles for service accounts in EKS.
+
+If You Have Already Created the Service Account Manually
+If you've already created the service account using a YAML file, but have not yet associated it with an IAM role, you don’t need to create the service account again using eksctl.
+
+Instead, you can manually associate the IAM role by adding the necessary annotation to your existing service account.
+
+Steps if Service Account Is Already Created:
+Ensure Service Account Exists: If you've already created the service account via YAML, check it exists:
+
+bash
+Copy code
+kubectl get serviceaccount s3-access-sa -n default
+Manually Annotate the Service Account with the IAM Role: You can manually add the annotation linking the IAM role ARN to the service account. This step is necessary for IRSA to work.
+
+bash
+Copy code
+kubectl annotate serviceaccount s3-access-sa \
+  -n default \
+  eks.amazonaws.com/role-arn=arn:aws:iam::123456789012:role/your-iam-role
+Replace arn:aws:iam::123456789012:role/your-iam-role with the actual IAM role ARN that you want to associate with the service account.
+Verify the Annotation: After annotating, you can verify that the service account has the correct annotation:
+
+bash
+Copy code
+kubectl get serviceaccount s3-access-sa -n default -o yaml
+You should see an output like this, where the IAM role ARN is listed in the annotations:
+
+yaml
+Copy code
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/your-iam-role
+  name: s3-access-sa
+  namespace: default
+Use the Service Account in Your Pod: Now that the IAM role is linked to the service account, you can specify this service account in your pod definitions as usual. Pods will be able to assume the IAM role and access the AWS resources.
+
+Recap of the Process
+Step 1: Create the Kubernetes Service Account: Use kubectl or a YAML file to create the service account in Kubernetes.
+Step 2: Create and Associate the IAM Role: If you haven't done this step yet, you can either use eksctl or manually create the IAM role and link it to the service account via annotations.
+Step 3: Use the Service Account in Pods: Pods running with this service account will have the IAM role permissions to access AWS resources like S3, DynamoDB, etc.
+
+
+
+
+
+
+####
+
+Annotations are key-value pairs that allow you to add arbitrary metadata to Kubernetes resources.
+They are used for storing additional information about a resource, which is not used for resource selection.
+Use cases include:
+Linking IAM roles to Kubernetes service accounts in EKS (via IRSA).
+Storing version numbers, deployment timestamps, or configuration settings.
+Communicating with external tools or controllers that can read and act on the annotations.x
+
+#######################
+
+
+The kubeconfig file is used to configure and store information that allows the kubectl (Kubernetes command-line tool) to access and manage a Kubernetes cluster. The file contains important information like:
+
+The cluster’s API server URL (where Kubernetes control plane is running),
+Authentication details (like user credentials or tokens),
+Cluster context (which cluster to interact with, and which namespace to use),
+Certificate data (for secure communication with the Kubernetes API server).
+Essentially, the kubeconfig file allows kubectl to know where and how to connect to your Kubernetes cluster.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*************************************************************************************
+4 Gb cpu cores , 10gb free memory, 35gb storage space mimum to run the openshift in local
